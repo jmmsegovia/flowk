@@ -1,0 +1,30 @@
+{
+  "id": "subflows.k8_cleanup",
+  "description": "Remove Helm releases created during the flow.",
+  "tasks": [
+    {
+      "id": "helm.uninstall_app",
+      "action": "HELM",
+      "description": "Remove the app release.",
+      "operation": "UNINSTALL",
+      "release_name": "${app_release}",
+      "namespace": "${kube_namespace}",
+      "kube_context": "${kube_context}",
+      "wait": true,
+      "timeout_seconds": 180,
+      "continueOnError": true
+    },
+    {
+      "id": "helm.uninstall_mysql",
+      "action": "HELM",
+      "description": "Remove the MySQL release.",
+      "operation": "UNINSTALL",
+      "release_name": "${mysql_release}",
+      "namespace": "${kube_namespace}",
+      "kube_context": "${kube_context}",
+      "wait": true,
+      "timeout_seconds": 180,
+      "continueOnError": true
+    }
+  ]
+}

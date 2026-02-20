@@ -1,0 +1,110 @@
+You are implementing a **new FlowK action** named `<ACTION_NAME>` in this repository.
+
+## Mission
+Design and deliver a production-quality action that is fully integrated across:
+- runtime execution,
+- schema validation,
+- tests,
+- documentation,
+- UI action guide,
+- and a realistic example flow.
+
+Functional objective:
+- `<clearly describe what this action must do>`
+- Supported operations (if any): `<list operations>`
+
+---
+
+## Non-negotiable rules
+1. **Study the codebase first** and replicate established patterns used in `internal/actions/*`.
+2. **Read and obey all AGENTS.md files** that apply to files you touch.
+3. Do not leave partial work. If a required integration point exists, implement it.
+4. Keep naming/style consistent with existing actions and schemas.
+5. Protect backward compatibility where similar actions already support legacy payload shapes.
+6. **Schema fragments must be scoped to the action**: never add global `enum`/constraints for shared fields (e.g., `operation`) at the top-level `properties` of the fragment unless they are guarded by `if: { action: <ACTION> }` + `then`. This avoids breaking unrelated actions after schema merge.
+7. **No external binaries**: when implementing a new action, do not shell out to external CLIs or rely on host-installed executables. Use Go libraries/SDKs available to the project (add module deps if needed).
+
+---
+
+## Required implementation workflow
+
+### Phase 1 — Discovery and design
+1. Inspect representative actions (same category if possible) and identify:
+   - payload structure,
+   - validation approach,
+   - result type conventions,
+   - error message style,
+   - test style.
+2. Define the action contract before coding:
+   - final action name string,
+   - operation model (single action vs operation-driven behavior),
+   - payload fields (required/optional),
+   - result format and `flow.ResultType`.
+
+### Phase 2 — Backend action package
+Create/complete `internal/actions/<category>/<action>/` with:
+1. `action.go`
+   - register with `registry.Register(action{})` in `init()`;
+   - implement `Name()` and `Execute(...)`;
+   - decode payload, validate, execute, and return consistent `registry.Result`.
+2. runtime logic file(s) (`<action>.go`, helpers)
+   - deterministic behavior,
+   - clear errors,
+   - no secret leakage in logs/results.
+   - **implementation must use libraries/SDKs, not external binaries**.
+3. `schema.json`
+   - accurate field descriptions,
+   - strict constraints (`enum`, `min/max`, `format`, `oneOf`, `additionalProperties`, etc.);
+   - operation-specific constraints via `if/then` (and `else` when useful);
+   - **IMPORTANT**: any `enum` or `pattern` for shared field names (like `operation`) must live inside an `if action == <ACTION_NAME>` block so it does not constrain other actions when schemas are merged.
+   - base required fields aligned with runtime requirements.
+4. `schema.go`
+   - embed schema and implement `JSONSchema()` via `registry.SchemaFromEmbedded(...)`.
+
+### Phase 3 — Tests
+Add/update unit tests to cover:
+1. happy paths per operation;
+2. invalid payload/validation failures;
+3. execution errors and edge cases;
+4. compatibility behavior (if legacy fields are supported);
+5. result shape + `flow.ResultType` assertions.
+
+### Phase 4 — Product integration
+1. **UI action guide integration**:
+   - ensure action is categorized correctly in `/actions/guide` (if category mapping is manual);
+   - update i18n labels (`en`/`es`) if new category/labels are introduced.
+2. **Docs**:
+   - update category index in `docs/actions/*` when needed;
+   - add a dedicated action page with practical examples and notes.
+3. **Example flow**:
+   - create a realistic flow in `flows/test/...` that demonstrates meaningful usage.
+
+### Phase 5 — Validation and quality gates
+Run relevant checks (expand based on touched areas):
+1. targeted Go tests for changed packages;
+2. broader `go test ./...` when cross-cutting changes are made;
+3. UI checks (`npm run build`, and tests if available) when `ui/` is modified;
+4. validate new example flow with:
+   - `./bin/flowk run -flow "$flow" -validate-only` (build binary first if needed).
+5. **Schema-scope sanity check**: validate a flow that uses a different action type to ensure your schema fragment does not reject unrelated actions (a common failure mode when `operation` enums are unscoped).
+
+If visual UI behavior changed, take a screenshot of `/actions/guide`.
+
+---
+
+## Final delivery requirements
+1. Commit on the current branch with a clear, scoped commit message.
+2. Create a PR with a concise title and detailed body.
+3. In your final summary include:
+   - what changed,
+   - tests/checks run with status icons (`✅`, `⚠️`, `❌`),
+   - risks, assumptions, or pending follow-ups.
+
+---
+
+## Quality checklist (must be true before finishing)
+- Runtime behavior, schema, docs, and example flow are aligned.
+- Action is discoverable/usable through existing FlowK patterns.
+- No obvious missing integration step remains.
+- Error messages are actionable.
+- Tests cover critical paths and failure modes.

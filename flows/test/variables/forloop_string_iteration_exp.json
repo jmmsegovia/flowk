@@ -1,0 +1,77 @@
+{
+  "id": "forloop_string_iteration",
+  "description": "Demonstrates iterating over a string using the FOR action values list.",
+  "tasks": [
+    {
+      "id": "initialize_word",
+      "description": "Prepare the variable that will accumulate the generated word.",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "assembled_word",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "prefix",
+          "type": "string",
+          "value": "PRE_"
+        }
+      ]
+    },
+    {
+      "id": "loop_letters",
+      "description": "Iterate over each character in the literal FLOWK string.",
+      "action": "FOR",
+      "variable": "current_letter",
+      "values": [
+        "${prefix}_T_",
+        "${prefix}_E_",
+        "${prefix}_S_",
+        "${prefix}_T_",
+        "${prefix}_F_",
+        "${prefix}_L_",
+        "${prefix}_O_",
+        "${prefix}_W_"
+      ],
+      "tasks": [
+        {
+          "id": "print_current_letter",
+          "description": "Log the active letter for the current iteration.",
+          "action": "PRINT",
+          "entries": [
+            {
+              "message": "Processing letter ${current_letter}"
+            }
+          ]
+        },
+        {
+          "id": "append_letter_to_word",
+          "description": "Append the active letter to the flow scoped variable.",
+          "action": "VARIABLES",
+          "scope": "flow",
+          "overwrite": true,
+          "vars": [
+            {
+              "name": "assembled_word",
+              "type": "string",
+              "value": "${assembled_word}${current_letter}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "print_final_word",
+      "description": "Display the final word produced by the loop.",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "Final word: ${assembled_word}"
+        }
+      ]
+    }
+  ]
+}

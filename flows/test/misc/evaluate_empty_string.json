@@ -1,0 +1,38 @@
+{
+  "id": "evaluate_empty_string",
+  "description": "Demonstrate EVALUATE comparisons against an empty string literal.",
+  "tasks": [
+    {
+      "id": "vars.seed_empty",
+      "description": "Define a sample string that is intentionally empty.",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "sample_value",
+          "type": "string",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "id": "eval.empty_string",
+      "description": "Verify the empty string comparison succeeds.",
+      "action": "EVALUATE",
+      "if_conditions": [
+        {
+          "left": "${sample_value}",
+          "operation": "=",
+          "right": ""
+        }
+      ],
+      "then": {
+        "continue": "Empty string comparison succeeded."
+      },
+      "else": {
+        "exit": "Expected an empty string comparison to succeed."
+      }
+    }
+  ]
+}

@@ -1,0 +1,215 @@
+{
+  "id": "alphavantage.intraday.demo",
+  "description": "Example flow that queries Alpha Vantage for intraday prices and logs a concise market snapshot",
+  "imports": [
+    "./subflows/docker_http_mock_alphavantage.json"
+  ],
+  "tasks": [
+    {
+      "id": "vars.configure_alpha_vantage",
+      "description": "Defines the Alpha Vantage endpoint, symbol, and API key used throughout the flow",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "baseUrl",
+          "type": "string",
+          "value": "http://127.0.0.1:8093/query"
+        },
+        {
+          "name": "functionName",
+          "type": "string",
+          "value": "TIME_SERIES_INTRADAY"
+        },
+        {
+          "name": "symbol",
+          "type": "string",
+          "value": "IBM"
+        },
+        {
+          "name": "intervalMinutes",
+          "type": "string",
+          "value": "5min"
+        },
+        {
+          "name": "outputSize",
+          "type": "string",
+          "value": "compact"
+        },
+        {
+          "name": "apiKey",
+          "type": "secret",
+          "value": "UGUDMA040VYHNGVG"
+        }
+      ]
+    },
+    {
+      "id": "http.fetch_intraday_series",
+      "description": "Calls Alpha Vantage to retrieve the latest intraday candles for the configured symbol",
+      "action": "HTTP_REQUEST",
+      "protocol": "HTTP",
+      "method": "GET",
+      "url": "${baseUrl}?function=${functionName}&symbol=${symbol}&interval=${intervalMinutes}&outputsize=${outputSize}&datatype=json&apikey=${apiKey}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    {
+      "id": "vars.extract_metadata",
+      "description": "Captures reusable metadata fields from the Alpha Vantage response",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "vars": [
+        {
+          "name": "lastRefreshed",
+          "type": "string",
+          "value": "${from.task:http.fetch_intraday_series.result$.response.body['Meta Data']['3. Last Refreshed']}"
+        },
+        {
+          "name": "timeZone",
+          "type": "string",
+          "value": "${from.task:http.fetch_intraday_series.result$.response.body['Meta Data']['6. Time Zone']}"
+        },
+        {
+          "name": "metaSummary",
+          "type": "object",
+          "value": {
+            "information": "${from.task:http.fetch_intraday_series.result$.response.body['Meta Data']['1. Information']}",
+            "symbol": "${from.task:http.fetch_intraday_series.result$.response.body['Meta Data']['2. Symbol']}",
+            "interval": "${from.task:http.fetch_intraday_series.result$.response.body['Meta Data']['4. Interval']}",
+            "output_size": "${from.task:http.fetch_intraday_series.result$.response.body['Meta Data']['5. Output Size']}"
+          }
+        },
+        {
+          "name": "metaSymbol",
+          "type": "string",
+          "value": "${from.task:http.fetch_intraday_series.result$.response.body['Meta Data']['2. Symbol']}"
+        },
+        {
+          "name": "metaInterval",
+          "type": "string",
+          "value": "${from.task:http.fetch_intraday_series.result$.response.body['Meta Data']['4. Interval']}"
+        }
+      ]
+    },
+    {
+      "id": "vars.compute_latest_snapshot",
+      "description": "Derives a structured view of the most recent candle returned by Alpha Vantage",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "vars": [
+        {
+          "name": "latestSnapshot",
+          "type": "object",
+          "value": "${from.task:http.fetch_intraday_series.result$.response.body['Time Series (5min)']['${lastRefreshed}']}"
+        },
+        {
+          "name": "latestOpen",
+          "type": "string",
+          "value": "${from.task:http.fetch_intraday_series.result$.response.body['Time Series (5min)']['${lastRefreshed}']['1. open']}"
+        },
+        {
+          "name": "latestHigh",
+          "type": "string",
+          "value": "${from.task:http.fetch_intraday_series.result$.response.body['Time Series (5min)']['${lastRefreshed}']['2. high']}"
+        },
+        {
+          "name": "latestLow",
+          "type": "string",
+          "value": "${from.task:http.fetch_intraday_series.result$.response.body['Time Series (5min)']['${lastRefreshed}']['3. low']}"
+        },
+        {
+          "name": "latestClose",
+          "type": "string",
+          "value": "${from.task:http.fetch_intraday_series.result$.response.body['Time Series (5min)']['${lastRefreshed}']['4. close']}"
+        },
+        {
+          "name": "latestVolume",
+          "type": "number",
+          "value": "${from.task:http.fetch_intraday_series.result$.response.body['Time Series (5min)']['${lastRefreshed}']['5. volume']}"
+        }
+      ]
+    },
+    {
+      "id": "print.series_overview",
+      "description": "Logs the key metrics obtained from Alpha Vantage for downstream observability",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "Queried symbol",
+          "variable": "symbol"
+        },
+        {
+          "message": "Alpha Vantage metadata",
+          "variable": "metaSummary"
+        },
+        {
+          "message": "Timestamp of latest candle",
+          "variable": "lastRefreshed"
+        },
+        {
+          "message": "Latest OHLC values",
+          "variable": "latestSnapshot"
+        },
+        {
+          "message": "Close price (USD)",
+          "variable": "latestClose"
+        },
+        {
+          "message": "Volume (shares)",
+          "variable": "latestVolume"
+        },
+        {
+          "message": "HTTP status",
+          "taskId": "http.fetch_intraday_series",
+          "field": "result$.response.status"
+        }
+      ]
+    },
+    {
+      "id": "evaluate.validate_payload",
+      "description": "Ensures the Alpha Vantage response matches the requested symbol and interval",
+      "action": "EVALUATE",
+      "if_conditions": [
+        {
+          "left": "${from.task:http.fetch_intraday_series.result$.response.status}",
+          "operation": "=",
+          "right": "200 OK"
+        },
+        {
+          "left": "${metaSymbol}",
+          "operation": "=",
+          "right": "${symbol}"
+        },
+        {
+          "left": "${metaInterval}",
+          "operation": "=",
+          "right": "${intervalMinutes}"
+        }
+      ],
+      "then": {
+        "continue": "Alpha Vantage returned up-to-date intraday data for ${symbol}"
+      },
+      "else": {
+        "exit": "The Alpha Vantage response did not match the requested symbol (${symbol}) or interval (${intervalMinutes})"
+      }
+    },
+    {
+      "id": "print.final_summary",
+      "description": "Presents a concise trading summary that downstream systems can consume",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "Latest close snapshot",
+          "value": "Symbol ${symbol} closed at ${latestClose} with ${latestVolume} shares traded at ${lastRefreshed} (${timeZone})"
+        },
+        {
+          "message": "Raw HTTP payload (truncated)",
+          "taskId": "http.fetch_intraday_series",
+          "field": "result$.response.body['Time Series (5min)']"
+        }
+      ]
+    }
+  ]
+}

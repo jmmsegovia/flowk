@@ -1,0 +1,77 @@
+{
+  "id": "demo_complex_flow",
+  "description": "Complex demo that combines HTTP assertions, Dockerized MySQL persistence, and shell-based PGP encryption via subflows.",
+  "imports": [
+    "./subflows/demo_musicbrainz_artist_asserts.json",
+    "./subflows/demo_mysql_futbol_docker.json",
+    "./subflows/demo_pgp_password.json"
+  ],
+  "tasks": [
+    {
+      "id": "demo.compose_report",
+      "description": "Combine outputs from the imported subflows into a single report object.",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "vars": [
+        {
+          "name": "demo_report",
+          "type": "object",
+          "value": {
+            "musicbrainz": {
+              "artist": "${demo_musicbrainz_artist}",
+              "country": "${demo_musicbrainz_country}",
+              "beginYear": "${demo_musicbrainz_begin_year}",
+              "beginArea": "${demo_musicbrainz_begin_area}",
+              "summary": "${demo_musicbrainz_summary}"
+            },
+            "pgp": {
+              "status": "${demo_pgp_status}",
+              "directory": "${demo_pgp_demo_dir}",
+              "encryptedFiles": "${demo_pgp_encrypted_files}"
+            },
+            "mysql": {
+              "profileRows": "${demo_mysql_profile_rows}",
+              "tagRows": "${demo_mysql_tag_rows}",
+              "countries": "${demo_mysql_countries}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "demo.print_report",
+      "description": "Print the consolidated report to highlight the combined demo capabilities.",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "MusicBrainz artist",
+          "variable": "demo_musicbrainz_artist"
+        },
+        {
+          "message": "MusicBrainz summary",
+          "variable": "demo_musicbrainz_summary"
+        },
+        {
+          "message": "PGP status",
+          "variable": "demo_pgp_status"
+        },
+        {
+          "message": "MySQL profile rows",
+          "variable": "demo_mysql_profile_rows"
+        },
+        {
+          "message": "MySQL tag rows",
+          "variable": "demo_mysql_tag_rows"
+        },
+        {
+          "message": "MySQL countries",
+          "variable": "demo_mysql_countries"
+        },
+        {
+          "message": "Full demo report",
+          "variable": "demo_report"
+        }
+      ]
+    }
+  ]
+}

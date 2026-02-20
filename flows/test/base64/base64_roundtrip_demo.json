@@ -1,0 +1,70 @@
+{
+  "id": "base64_roundtrip_demo",
+  "description": "Encodes and decodes a payload using BASE64, then validates the roundtrip result.",
+  "tasks": [
+    {
+      "id": "vars.seed",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "plain_message",
+          "type": "string",
+          "value": "FlowK BASE64 demo payload"
+        }
+      ]
+    },
+    {
+      "id": "base64.encode",
+      "action": "BASE64",
+      "operation": "ENCODE",
+      "input": "${plain_message}",
+      "wrap": 0
+    },
+    {
+      "id": "base64.decode",
+      "action": "BASE64",
+      "operation": "DECODE",
+      "input": "${from.task:base64.encode.result$.stdout}",
+      "ignoreGarbage": true
+    },
+    {
+      "id": "evaluate.roundtrip",
+      "action": "EVALUATE",
+      "if_conditions": [
+        {
+          "left": "${from.task:base64.decode.result$.stdout}",
+          "operation": "=",
+          "right": "${plain_message}"
+        }
+      ],
+      "then": {
+        "continue": "BASE64 roundtrip ok"
+      },
+      "else": {
+        "exit": "BASE64 roundtrip mismatch"
+      }
+    },
+    {
+      "id": "print.summary",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "Original",
+          "variable": "plain_message"
+        },
+        {
+          "message": "Encoded stdout",
+          "taskId": "base64.encode",
+          "field": "result$.stdout"
+        },
+        {
+          "message": "Decoded stdout",
+          "taskId": "base64.decode",
+          "field": "result$.stdout"
+        }
+      ]
+    }
+  ]
+}

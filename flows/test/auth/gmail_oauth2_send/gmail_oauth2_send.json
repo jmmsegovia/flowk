@@ -1,0 +1,12 @@
+{
+  "id": "gmail_oauth_send_demo",
+  "description": "Generate OAuth2 authorize URL, exchange code, and send an email with Gmail API",
+  "imports": [
+    "../flow_credentials/gmail_secrets_sf.json",
+    "./subflows/build_message_sf.json",
+    "./subflows/build_authorize_url_sf.json",
+    "./subflows/refresh_access_token_sf.json",
+    "./subflows/send_email_sf.json"
+  ],
+  "tasks": []
+}

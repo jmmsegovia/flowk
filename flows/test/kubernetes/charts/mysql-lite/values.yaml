@@ -1,0 +1,17 @@
+replicaCount: 1
+
+image:
+  repository: mysql
+  tag: "8.0"
+  pullPolicy: IfNotPresent
+
+service:
+  port: 3306
+
+fullnameOverride: ""
+
+env:
+  rootPassword: ""
+  database: ""
+  user: ""
+  password: ""

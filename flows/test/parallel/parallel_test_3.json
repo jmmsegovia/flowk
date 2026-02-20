@@ -1,0 +1,67 @@
+{
+  "id": "parallel.flow.demo",
+  "description": "Demonstrates the PARALLEL action executing multiple subtasks",
+  "tasks": [
+    {
+      "id": "parallel.work",
+      "description": "Execute subtasks concurrently",
+      "action": "PARALLEL",
+      "fail_fast": false,
+      "merge_strategy": "last_write_wins",
+      "merge_order": [
+        "loop_1",
+        "loop_2"
+      ],
+      "tasks": [
+        {
+          "id": "loop_1",
+          "description": "Iterate from 1 to 10 and print the counter",
+          "action": "FOR",
+          "variable": "loop_counter_1",
+          "initial": 1,
+          "condition": {
+            "operator": "<=",
+            "value": 10
+          },
+          "step": 1,
+          "tasks": [
+            {
+              "id": "print_iteration_1",
+              "description": "Log the current counter value",
+              "action": "PRINT",
+              "entries": [
+                {
+                  "message": "Iteration_1 ${loop_counter_1}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "loop_2",
+          "description": "Iterate from 1 to 10 and print the counter",
+          "action": "FOR",
+          "variable": "loop_counter_2",
+          "initial": 1,
+          "condition": {
+            "operator": "<=",
+            "value": 10
+          },
+          "step": 1,
+          "tasks": [
+            {
+              "id": "print_iteration_2",
+              "description": "Log the current counter value",
+              "action": "PRINT",
+              "entries": [
+                {
+                  "message": "Iteration_2 ${loop_counter_2}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

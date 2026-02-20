@@ -1,0 +1,36 @@
+{
+  "id": "docker_http_mock_musicbrainz",
+  "description": "Run a local HTTP echo server that returns a MusicBrainz-like payload.",
+  "tasks": [
+    {
+      "id": "docker.pull.http_echo.musicbrainz",
+      "action": "DOCKER",
+      "operation": "IMAGE_PULL",
+      "image": "hashicorp/http-echo:0.2.3"
+    },
+    {
+      "id": "docker.run.musicbrainz_mock",
+      "action": "DOCKER",
+      "operation": "CONTAINER_RUN",
+      "image": "hashicorp/http-echo:0.2.3",
+      "name": "flowk-musicbrainz-mock",
+      "detach": true,
+      "remove_existing": true,
+      "ports": [
+        "8095:8095"
+      ],
+      "command": [
+        "-listen",
+        ":8095",
+        "-text",
+        "{\"id\":\"084308bd-1654-436f-ba03-df6697104e19\",\"type\":\"Group\",\"name\":\"Green Day\",\"country\":\"US\",\"gender\":null,\"disambiguation\":\"\",\"life-span\":{\"begin\":\"1989\",\"ended\":false},\"begin-area\":{\"sort-name\":\"Berkeley\"},\"isnis\":[\"000000012349074X\"],\"ipis\":[],\"area\":{\"iso-3166-1-codes\":[\"US\"]}}"
+      ]
+    },
+    {
+      "id": "sleep.musicbrainz_mock",
+      "description": "Wait for the mock server to accept requests.",
+      "action": "SLEEP",
+      "seconds": 1
+    }
+  ]
+}

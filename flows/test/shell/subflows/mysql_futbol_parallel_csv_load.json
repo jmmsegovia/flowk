@@ -1,0 +1,38 @@
+{
+  "id": "subflows.mysql_futbol_parallel_csv.load_csv",
+  "description": "Create the CSV file and load football players into MySQL.",
+  "tasks": [
+    {
+      "id": "shell.csv.create",
+      "description": "Create CSV file in host filesystem for LOAD_CSV operation",
+      "action": "SHELL",
+      "command": [
+        "set -euo pipefail",
+        "cat > ${csv_file_host} <<'CSV'",
+        "name,team,position,goals",
+        "Lionel Messi,Inter Miami,FW,10",
+        "Alexia Putellas,FC Barcelona,MF,8",
+        "Kylian Mbappe,Real Madrid,FW,12",
+        "Aitana Bonmati,FC Barcelona,MF,9",
+        "CSV"
+      ],
+      "shell": {
+        "program": "/bin/bash",
+        "args": [
+          "-lc"
+        ]
+      }
+    },
+    {
+      "id": "load_players_from_csv_mysql",
+      "description": "Load football players from CSV using native LOAD_CSV operation",
+      "platform": "${platform_mysql_local}",
+      "action": "DB_MYSQL_OPERATION",
+      "operation": "LOAD_CSV",
+      "database": "flowk_db",
+      "table": "football_players",
+      "file_path": "${csv_file_host}",
+      "has_header": true
+    }
+  ]
+}

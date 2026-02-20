@@ -1,0 +1,72 @@
+{
+  "id": "parallel.flow.demo",
+  "description": "Demonstrates the PARALLEL action executing multiple subtasks",
+  "tasks": [
+    {
+      "id": "setup",
+      "description": "Initialize shared variables",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "initial_value",
+          "type": "string",
+          "value": "base"
+        }
+      ]
+    },
+    {
+      "id": "parallel.work",
+      "description": "Execute subtasks concurrently",
+      "action": "PARALLEL",
+      "fail_fast": false,
+      "merge_strategy": "last_write_wins",
+      "merge_order": [
+        "parallel.b",
+        "parallel.a"
+      ],
+      "tasks": [
+        {
+          "id": "parallel.a",
+          "description": "Set parallel value from branch A",
+          "action": "VARIABLES",
+          "scope": "flow",
+          "overwrite": true,
+          "vars": [
+            {
+              "name": "parallel_value",
+              "type": "string",
+              "value": "from_a"
+            }
+          ]
+        },
+        {
+          "id": "parallel.b",
+          "description": "Set parallel value from branch B",
+          "action": "VARIABLES",
+          "scope": "flow",
+          "overwrite": true,
+          "vars": [
+            {
+              "name": "parallel_value",
+              "type": "string",
+              "value": "from_b"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "parallel.log",
+      "description": "Log the base variable",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "parallel_value",
+          "value": "${parallel_value}"
+        }
+      ]
+    }
+  ]
+}

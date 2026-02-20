@@ -1,0 +1,156 @@
+{
+  "id": "subflows.mysql_futbol_parallel_csv.setup",
+  "description": "Setup MySQL container and football_players table for CSV load.",
+  "tasks": [
+    {
+      "id": "vars.mysql_futbol_csv",
+      "description": "Declare MySQL platform configuration and expected values",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "platform_mysql_local",
+          "type": "object",
+          "value": {
+            "name": "local_mysql",
+            "mysql": {
+              "host": "127.0.0.1",
+              "port": "3308",
+              "databases": [
+                {
+                  "name": "flowk_db",
+                  "user": "flowk",
+                  "password": "flowk"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "mysql_container_name",
+          "type": "string",
+          "value": "flowk-mysql-csv"
+        },
+        {
+          "name": "mysql_image",
+          "type": "string",
+          "value": "mysql:8.0"
+        },
+        {
+          "name": "mysql_port",
+          "type": "string",
+          "value": "3308"
+        },
+        {
+          "name": "mysql_root_password",
+          "type": "string",
+          "value": "flowk"
+        },
+        {
+          "name": "mysql_user",
+          "type": "string",
+          "value": "flowk"
+        },
+        {
+          "name": "mysql_password",
+          "type": "string",
+          "value": "flowk"
+        },
+        {
+          "name": "mysql_database",
+          "type": "string",
+          "value": "flowk_db"
+        },
+        {
+          "name": "csv_file_host",
+          "type": "string",
+          "value": "/tmp/football_players.csv"
+        },
+        {
+          "name": "expected_player_count",
+          "type": "number",
+          "value": 4
+        },
+        {
+          "name": "expected_team",
+          "type": "string",
+          "value": "FC Barcelona"
+        }
+      ]
+    },
+    {
+      "id": "docker.image.pull.mysql",
+      "description": "Pull MySQL Docker image",
+      "action": "DOCKER",
+      "operation": "IMAGE_PULL",
+      "image": "${mysql_image}"
+    },
+    {
+      "id": "docker.container.run.mysql",
+      "description": "Run MySQL container",
+      "action": "DOCKER",
+      "operation": "CONTAINER_RUN",
+      "detach": true,
+      "remove_existing": true,
+      "image": "${mysql_image}",
+      "name": "${mysql_container_name}",
+      "env": [
+        "MYSQL_ROOT_PASSWORD=${mysql_root_password}",
+        "MYSQL_DATABASE=${mysql_database}",
+        "MYSQL_USER=${mysql_user}",
+        "MYSQL_PASSWORD=${mysql_password}"
+      ],
+      "ports": [
+        "${mysql_port}:3306"
+      ],
+      "command": [
+        "--default-authentication-plugin=mysql_native_password"
+      ]
+    },
+    {
+      "id": "sleep.mysql.startup",
+      "description": "Give MySQL time to boot",
+      "action": "SLEEP",
+      "seconds": 8
+    },
+    {
+      "id": "docker.container.exec.mysql.ping",
+      "description": "Check MySQL is accepting connections",
+      "action": "DOCKER",
+      "operation": "CONTAINER_EXEC",
+      "container": "${mysql_container_name}",
+      "command": [
+        "sh",
+        "-c",
+        "for i in $(seq 1 20); do mysqladmin ping -h 127.0.0.1 -uroot -p${mysql_root_password} --silent && exit 0; sleep 2; done; exit 1"
+      ],
+      "timeoutSeconds": 60
+    },
+    {
+      "id": "check_connection_mysql",
+      "description": "Check connection to MySQL",
+      "platform": "${platform_mysql_local}",
+      "action": "DB_MYSQL_OPERATION",
+      "operation": "CHECK_CONNECTION"
+    },
+    {
+      "id": "create_players_table_mysql",
+      "description": "Create football players table",
+      "platform": "${platform_mysql_local}",
+      "action": "DB_MYSQL_OPERATION",
+      "operation": "SQL",
+      "database": "flowk_db",
+      "command": "CREATE TABLE IF NOT EXISTS football_players (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255) NOT NULL, team VARCHAR(255) NOT NULL, position VARCHAR(10) NOT NULL, goals INT NOT NULL)"
+    },
+    {
+      "id": "truncate_players_table_mysql",
+      "description": "Ensure the table starts empty",
+      "platform": "${platform_mysql_local}",
+      "action": "DB_MYSQL_OPERATION",
+      "operation": "SQL",
+      "database": "flowk_db",
+      "command": "TRUNCATE TABLE football_players"
+    }
+  ]
+}

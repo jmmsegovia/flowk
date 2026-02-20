@@ -1,0 +1,69 @@
+{
+  "id": "ssh_sftp_demo",
+  "description": "Uploads and downloads files over SSH SFTP",
+  "imports": [
+    "./subflows/docker_ssh_local.json"
+  ],
+  "tasks": [
+    {
+      "id": "ssh.sftp.operations",
+      "description": "Transfer files using SSH SFTP",
+      "action": "SSH",
+      "connection": {
+        "address": "127.0.0.1:2222",
+        "username": "root",
+        "auth": {
+          "method": "password",
+          "password": "flowkpass"
+        },
+        "hostKey": {
+          "mode": "insecure"
+        }
+      },
+      "sftp": {
+        "maxConcurrentRequestsPerFile": 1,
+        "maxPacket": 32768,
+        "concurrentReads": false,
+        "concurrentWrites": false,
+        "useFstat": false
+      },
+      "steps": [
+        {
+          "id": "ssh.ensure_remote_dir",
+          "operation": "RUN_COMMAND",
+          "commands": [
+            "mkdir -p /tmp/flowk_demo"
+          ]
+        },
+        {
+          "id": "ssh.sftp.upload",
+          "operation": "SFTP",
+          "method": "UPLOAD",
+          "params": {
+            "localPath": "./flows/test/ssh/ssh_sftp_demo/fixtures/todo.txt",
+            "remotePath": "/tmp/flowk_demo/todo.txt",
+            "permissions": "0644"
+          }
+        },
+        {
+          "id": "ssh.sftp.download",
+          "operation": "SFTP",
+          "method": "DOWNLOAD",
+          "params": {
+            "remotePath": "/tmp/flowk_demo/todo.txt",
+            "localPath": "./flows/test/artifacts/todo.txt"
+          }
+        },
+        {
+          "id": "ssh.sftp.list",
+          "operation": "SFTP",
+          "method": "READ_DIR",
+          "params": {
+            "path": "/tmp/flowk_demo"
+          },
+          "stdout": "capture"
+        }
+      ]
+    }
+  ]
+}

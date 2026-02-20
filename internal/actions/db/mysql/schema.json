@@ -1,0 +1,142 @@
+{
+  "definitions": {
+    "task": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "enum": [
+            "DB_MYSQL_OPERATION"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "description": "Task description"
+        },
+        "operation": {
+          "type": "string",
+          "description": "MySQL operation to execute"
+        },
+        "skip_tables": {
+          "type": "array",
+          "description": "Qualified table names to skip when truncating tables (database.table).",
+          "items": {
+            "type": "string"
+          }
+        },
+        "database": {
+          "type": "string",
+          "description": "Optional database override. Required for SQL operations; when provided for drop/truncate/list operations it restricts processing to the named database."
+        },
+        "table": {
+          "type": "string",
+          "description": "Target table for LOAD_CSV operation."
+        },
+        "file_path": {
+          "type": "string",
+          "description": "Absolute or relative CSV file path for LOAD_CSV operation."
+        },
+        "columns": {
+          "type": "array",
+          "description": "Optional explicit column list. If omitted and has_header is true, columns are inferred from CSV header.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "delimiter": {
+          "type": "string",
+          "description": "Optional one-character CSV delimiter. Defaults to comma (,)."
+        },
+        "has_header": {
+          "type": "boolean",
+          "description": "Whether the CSV file includes a header row. Defaults to true."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "DB_MYSQL_OPERATION"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "required": [
+              "id",
+              "action",
+              "platform",
+              "operation"
+            ],
+            "properties": {
+              "operation": {
+                "enum": [
+                  "DROP_ALL_OBJECTS",
+                  "TRUNCATE_ALL_TABLES",
+                  "LIST_ALL_TABLES",
+                  "LIST_ALL_OBJECTS",
+                  "CHECK_CONNECTION",
+                  "SQL",
+                  "LOAD_CSV"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "DB_MYSQL_OPERATION"
+              },
+              "operation": {
+                "const": "SQL"
+              }
+            },
+            "required": [
+              "action",
+              "operation"
+            ]
+          },
+          "then": {
+            "required": [
+              "database",
+              "command"
+            ],
+            "properties": {
+              "command": {
+                "type": "string",
+                "description": "SQL statement to execute when operation is SQL."
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "DB_MYSQL_OPERATION"
+              },
+              "operation": {
+                "const": "LOAD_CSV"
+              }
+            },
+            "required": [
+              "action",
+              "operation"
+            ]
+          },
+          "then": {
+            "required": [
+              "database",
+              "table",
+              "file_path"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

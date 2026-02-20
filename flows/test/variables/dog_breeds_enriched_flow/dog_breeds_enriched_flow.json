@@ -1,0 +1,195 @@
+{
+  "id": "dog_breeds_enriched_flow",
+  "description": "Reference flow that interacts with the Dog API and demonstrates advanced use of VARIABLES, PRINT, and EVALUATE",
+  "imports": [
+    "./subflows/docker_http_mock_dog_api.json"
+  ],
+  "tasks": [
+    {
+      "id": "vars.initial_configuration",
+      "description": "Defines reusable configuration variables for the breed collection",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "apiBaseUrl",
+          "type": "string",
+          "value": "http://127.0.0.1:8091"
+        },
+        {
+          "name": "endpoint",
+          "type": "string",
+          "value": "/breeds"
+        },
+        {
+          "name": "pageNumber",
+          "type": "number",
+          "value": 1
+        },
+        {
+          "name": "weightThreshold",
+          "type": "number",
+          "value": 30
+        },
+        {
+          "name": "requestDelaySeconds",
+          "type": "number",
+          "value": 2
+        },
+        {
+          "name": "filteredGroupId",
+          "type": "string",
+          "value": "8000793f-a1ae-4ec4-8d55-ef83f1f644e5"
+        },
+        {
+          "name": "flowMetadata",
+          "type": "object",
+          "value": {
+            "source": "DogAPI",
+            "owner": "Demo Team",
+            "description": "Complex example leveraging VARIABLES/PRINT/EVALUATE"
+          }
+        }
+      ]
+    },
+    {
+      "id": "http.fetch_breeds",
+      "description": "Calls the public dog API to obtain a page of breeds",
+      "action": "HTTP_REQUEST",
+      "protocol": "HTTP",
+      "method": "GET",
+      "url": "${apiBaseUrl}${endpoint}?page[number]=${pageNumber}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    {
+      "id": "vars.breed_metrics",
+      "description": "Calculates metrics from the API response",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "vars": [
+        {
+          "name": "currentPage",
+          "type": "number",
+          "value": "${from.task:http.fetch_breeds.result$.response.body.meta.pagination.current}"
+        },
+        {
+          "name": "recordsPerPage",
+          "type": "number",
+          "value": "${from.task:http.fetch_breeds.result$.response.body.data.length()}"
+        },
+        {
+          "name": "nextPage",
+          "type": "number",
+          "value": "${from.task:http.fetch_breeds.result$.response.body.meta.pagination.next}"
+        },
+        {
+          "name": "hypoallergenicBreeds",
+          "type": "array",
+          "value": "${from.task:http.fetch_breeds.result$.response.body.data[?(@.attributes.hypoallergenic == true)].attributes.name}"
+        },
+        {
+          "name": "breedsFilteredByGroup",
+          "type": "array",
+          "value": "${from.task:http.fetch_breeds.result$.response.body.data[?(@.relationships.group.data.id == '${filteredGroupId}')].attributes.name}"
+        },
+        {
+          "name": "lifeSummary",
+          "type": "object",
+          "value": {
+            "minimum": "${from.task:http.fetch_breeds.result$.response.body.data[*].attributes.life.min}",
+            "maximum": "${from.task:http.fetch_breeds.result$.response.body.data[*].attributes.life.max}"
+          }
+        },
+        {
+          "name": "paginationSummary",
+          "type": "object",
+          "value": {
+            "current_page": "${from.task:http.fetch_breeds.result$.response.body.meta.pagination.current}",
+            "next_in_payload": "${from.task:http.fetch_breeds.result$.response.body.meta.pagination.next}",
+            "last": "${from.task:http.fetch_breeds.result$.response.body.meta.pagination.last}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "print.overview",
+      "description": "Displays relevant data by combining text, variables, and task fields",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "Flow metadata",
+          "variable": "flowMetadata"
+        },
+        {
+          "message": "Requested page",
+          "variable": "currentPage"
+        },
+        {
+          "message": "Hypoallergenic breeds detected",
+          "variable": "hypoallergenicBreeds"
+        },
+        {
+          "message": "Weight threshold",
+          "variable": "weightThreshold"
+        },
+        {
+          "message": "Breeds that belong to the filtered group",
+          "variable": "breedsFilteredByGroup"
+        },
+        {
+          "message": "First raw result",
+          "value": "${from.task:http.fetch_breeds.result$.response.body.data[0]}"
+        },
+        {
+          "message": "Life expectancy summary",
+          "variable": "lifeSummary"
+        }
+      ]
+    },
+    {
+      "id": "evaluate.valid_response",
+      "description": "Verifies that the HTTP response was successful and contains data",
+      "action": "EVALUATE",
+      "if_conditions": [
+        {
+          "left": "${from.task:http.fetch_breeds.result$.response.status}",
+          "operation": "=",
+          "right": "200 OK"
+        },
+        {
+          "left": "${from.task:http.fetch_breeds.result$.response.body.data.length()}",
+          "operation": "=",
+          "right": "${from.task:vars.breed_metrics.result$.recordsPerPage}"
+        }
+      ],
+      "then": {
+        "continue": "Valid response received for page ${pageNumber}"
+      },
+      "else": {
+        "exit": "The API call did not return results for page ${pageNumber}"
+      }
+    },
+    {
+      "id": "print.final_summary",
+      "description": "Emits an extended summary that combines data after the evaluations",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "Current and next page",
+          "variable": "paginationSummary"
+        },
+        {
+          "message": "Breed identifiers in the response",
+          "value": "${from.task:http.fetch_breeds.result$.response.body.data[*].id}"
+        },
+        {
+          "message": "Pagination links",
+          "value": "${from.task:http.fetch_breeds.result$.response.body.links}"
+        }
+      ]
+    }
+  ]
+}

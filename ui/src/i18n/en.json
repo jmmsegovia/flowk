@@ -1,0 +1,144 @@
+{
+  "app": {
+    "title": "FlowK UI",
+    "header": "Flow Builder",
+    "languageLabel": "Language"
+  },
+  "nav": {
+    "flows": "Flows",
+    "actions": "Actions guide"
+  },
+  "buttons": {
+    "importFlow": "Import flow",
+    "newFlow": "New flow",
+    "save": "Save changes",
+    "run": "Run flow",
+    "running": "Running...",
+    "runTask": "Run task",
+    "runningTask": "Running task...",
+    "stopAtTask": "Stop at task",
+    "stopFlow": "Stop flow",
+    "stoppingFlow": "Stopping...",
+    "resumeFromTask": "Resume from task",
+    "addTask": "Add task",
+    "open": "Open",
+    "delete": "Close"
+  },
+  "flowBuilder": {
+    "noFlowTitle": "No flow selected",
+    "noFlowDescription": "Import a JSON file from the Flows page to start building and running.",
+    "tasksTitle": "Tasks",
+    "tabs": {
+      "inspector": "Inspector",
+      "execution": "Execution",
+      "notes": "Notes"
+    },
+    "runError": "An error occurred while starting the execution.",
+    "resumeError": "An error occurred while resuming the execution.",
+    "stopError": "An error occurred while stopping the execution.",
+    "stopAtError": "An error occurred while setting the stop task."
+  },
+  "flowList": {
+    "title": "Available flows",
+    "description": "Select a flow to edit it in the visual builder. You can import JSON files or create new definitions.",
+    "empty": "No flows loaded yet. Use \"Import flow\" to get started.",
+    "taskCount": "{{count}} tasks"
+  },
+  "actionGuide": {
+    "title": "Actions and operations",
+    "description": "Use this catalog to help language models generate valid FlowK payloads. The data is built dynamically from the registered actions.",
+    "download": "Download Markdown",
+    "generated": "Generated {{date}}",
+    "loading": "Loading action catalog...",
+    "error": "We could not load the actions guide.",
+    "errorWithMessage": "We could not load the actions guide: {{message}}",
+    "primerTitle": "How to generate FlowK JSON files",
+    "indexTitle": "Actions index",
+    "required": "Required fields",
+    "optional": "Optional fields",
+    "operations": "Operations",
+    "allowedValues": "Allowed values",
+    "example": "Example task",
+    "noOperations": "This action does not declare specific operations.",
+    "none": "No fields documented for this section",
+    "back": "Back to actions guide",
+    "detailDescription": "Action reference based on the internal Markdown help.",
+    "notFound": "We could not find this action.",
+    "noHelp": "No Markdown help is available for this action.",
+    "groupCount": "{{count}} action",
+    "groupCount_plural": "{{count}} actions",
+    "categories": {
+      "auth": "Authentication",
+      "core": "Core",
+      "db": "Database",
+      "infra": "Infrastructure",
+      "network": "Network",
+      "security": "Security",
+      "storage": "Storage",
+      "system": "System",
+      "other": "Other"
+    }
+  },
+  "imports": {
+    "title": "Subflows",
+    "empty": "No subflows loaded"
+  },
+  "timeline": {
+    "title": "Execution timeline",
+    "action": "Action",
+    "operation": "Operation",
+    "statusFallback": "no status",
+    "startLabel": "Start",
+    "endLabel": "End",
+    "noTime": "No timing information",
+    "duration": "Duration (s)",
+    "success": "Success",
+    "sortedByTime": "Sorted by time"
+  },
+  "taskInspector": {
+    "title": "Task inspector",
+    "statusUnknown": "No status",
+    "resultTitle": "Result data",
+    "resultSubtitle": "Result data",
+    "definitionTitle": "Definition",
+    "definitionJson": "Definition JSON",
+    "runtimeTitle": "Runtime Data",
+    "runtimeEmpty": "No runtime data available. Task has not been executed yet.",
+    "resultEmpty": "No result available yet.",
+    "metadataTitle": "Task metadata",
+    "logsTitle": "Logs",
+    "logsEmpty": "No logs recorded for this task.",
+    "fields": {
+      "id": "Identifier",
+      "description": "Description",
+      "action": "Action",
+      "operation": "Operation",
+      "status": "Status",
+      "success": "Success",
+      "resultType": "Result type",
+      "startedAt": "Start",
+      "finishedAt": "End",
+      "durationSeconds": "Duration (s)"
+    }
+  },
+  "taskNode": {
+    "action": "Action",
+    "operation": "Operation",
+    "id": "ID",
+    "status": "Status",
+    "success": "Success",
+    "statusFallback": "No status"
+  },
+  "flowRunner": {
+    "error": "An error occurred while running the flow."
+  },
+  "appShell": {
+    "feedback": {
+      "success": "Flow \"{{flowId}}\" imported successfully.",
+      "error": "We couldn't import the flow: {{message}}",
+      "readError": "Could not read the selected file.",
+      "invalidFile": "The file is not valid text.",
+      "unknown": "Unknown error"
+    }
+  }
+}

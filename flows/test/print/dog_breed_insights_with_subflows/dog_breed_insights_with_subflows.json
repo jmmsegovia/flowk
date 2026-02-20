@@ -1,0 +1,79 @@
+{
+  "id": "dog_breed_insights_with_subflows",
+  "description": "Complex example that combines Dog API analytics with Kubernetes observability using reusable subflows.",
+  "imports": [
+    "./subflows/docker_http_mock_dog_api.json",
+    "./subflows/dog_api_ingestion.json",
+    "./subflows/dog_api_metrics.json",
+    "./subflows/k8s_observability_checks.json"
+  ],
+  "tasks": [
+    {
+      "id": "pipeline.print_intro",
+      "description": "Announce the start of the multi-stage insight pipeline.",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "Launching dog breed insight pipeline"
+        }
+      ]
+    },
+    {
+      "id": "pipeline.define_metadata",
+      "description": "Declare metadata variables consumed by the imported subflows and final report.",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "pipelineOwner",
+          "type": "string",
+          "value": "Data Insights Guild"
+        },
+        {
+          "name": "targetEnvironment",
+          "type": "string",
+          "value": "playground"
+        },
+        {
+          "name": "reportingChannel",
+          "type": "string",
+          "value": "#dog-insights"
+        }
+      ]
+    },
+    {
+      "id": "pipeline.pause_before_subflows",
+      "description": "Provide a short buffer so credentials and prerequisites can settle before imported tasks run.",
+      "action": "SLEEP",
+      "seconds": 2
+    },
+    {
+      "id": "pipeline.print_wrap_up",
+      "description": "Emit a consolidated summary after all subflows complete.",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "Pipeline owner",
+          "variable": "pipelineOwner"
+        },
+        {
+          "message": "Target environment",
+          "variable": "targetEnvironment"
+        },
+        {
+          "message": "Primary insight",
+          "variable": "insightSummary"
+        },
+        {
+          "message": "Kubernetes log sample",
+          "variable": "k8sLogSample"
+        },
+        {
+          "message": "Report channel",
+          "variable": "reportingChannel"
+        }
+      ]
+    }
+  ]
+}

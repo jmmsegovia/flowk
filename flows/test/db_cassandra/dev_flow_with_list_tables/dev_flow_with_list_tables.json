@@ -1,0 +1,81 @@
+{
+  "id": "dev_flow_with_list_tables",
+  "description": "Test flow",
+  "imports": [
+    "./subflows/docker_cassandra_local.json"
+  ],
+  "tasks": [
+    {
+      "id": "vars.cassandra_platforms",
+      "description": "Declare Cassandra platform configurations",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "cluster1",
+          "type": "object",
+          "value": {
+            "cassandra": {
+              "cluster": "localhost",
+              "port": "9042",
+              "keyspaces": [
+                {
+                  "name": "sales",
+                  "user": "cassandra",
+                  "password": "cassandra"
+                },
+                {
+                  "name": "customers",
+                  "user": "cassandra",
+                  "password": "cassandra"
+                },
+                {
+                  "name": "products",
+                  "user": "cassandra",
+                  "password": "cassandra"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "cluster2",
+          "type": "object",
+          "value": {
+            "cassandra": {
+              "cluster": "localhost",
+              "port": "9042",
+              "keyspaces": [
+                {
+                  "name": "customers",
+                  "user": "cassandra",
+                  "password": "cassandra"
+                },
+                {
+                  "name": "products",
+                  "user": "cassandra",
+                  "password": "cassandra"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "check_connection_cluster1",
+      "description": "Check connection for cluster 1",
+      "platform": "${cluster1}",
+      "action": "DB_CASSANDRA_OPERATION",
+      "operation": "LIST_ALL_TABLES"
+    },
+    {
+      "id": "check_connection_cluster2",
+      "description": "Check connection for cluster 2",
+      "platform": "${cluster2}",
+      "action": "DB_CASSANDRA_OPERATION",
+      "operation": "LIST_ALL_TABLES"
+    }
+  ]
+}

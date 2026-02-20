@@ -1,0 +1,11 @@
+{
+  "id": "mysql_futbol_parallel_csv_flow",
+  "description": "MySQL flow with PARALLEL and EVALUATE loading football data from CSV (Docker included).",
+  "imports": [
+    "./subflows/mysql_futbol_parallel_csv_setup.json",
+    "./subflows/mysql_futbol_parallel_csv_load.json",
+    "./subflows/mysql_futbol_parallel_csv_queries.json",
+    "./subflows/mysql_futbol_parallel_csv_cleanup.json"
+  ],
+  "tasks": []
+}

@@ -1,0 +1,106 @@
+{
+  "id": "subflows.dog_api_metrics",
+  "description": "Derive actionable metrics from the Dog API payload and craft a concise insight summary.",
+  "tasks": [
+    {
+      "id": "dog_metrics.compute_lists",
+      "description": "Calculate filtered lists and metadata derived from the latest Dog API response.",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "vars": [
+        {
+          "name": "totalBreedsReturned",
+          "type": "number",
+          "value": "${from.task:dog_api.fetch_page.result$.response.body.data.length()}"
+        },
+        {
+          "name": "longLivedBreeds",
+          "type": "array",
+          "value": "${from.task:dog_api.fetch_page.result$.response.body.data[?(@.attributes.life.min >= 14)].attributes.name}"
+        },
+        {
+          "name": "longLivedBreedsCount",
+          "type": "number",
+          "value": "${from.task:dog_api.fetch_page.result$.response.body.data[?(@.attributes.life.min >= 14)].length()}"
+        },
+        {
+          "name": "compactWorkingBreeds",
+          "type": "array",
+          "value": "${from.task:dog_api.fetch_page.result$.response.body.data[?(@.attributes.male_weight.max <= 25)].attributes.name}"
+        },
+        {
+          "name": "compactWorkingBreedsCount",
+          "type": "number",
+          "value": "${from.task:dog_api.fetch_page.result$.response.body.data[?(@.attributes.male_weight.max <= 25)].length()}"
+        },
+        {
+          "name": "lifeExpectationBounds",
+          "type": "object",
+          "value": {
+            "minimum": "${from.task:dog_api.fetch_page.result$.response.body.data[*].attributes.life.min}",
+            "maximum": "${from.task:dog_api.fetch_page.result$.response.body.data[*].attributes.life.max}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dog_metrics.evaluate_hypoallergenic",
+      "description": "Confirm at least one hypoallergenic breed was discovered to keep downstream alerting satisfied.",
+      "action": "EVALUATE",
+      "if_conditions": [
+        {
+          "left": "${from.task:dog_api.fetch_page.result$.response.body.data[?(@.attributes.hypoallergenic == true)].length()}",
+          "operation": ">",
+          "right": 0
+        }
+      ],
+      "then": {
+        "continue": "Hypoallergenic coverage confirmed with ${totalHypoallergenicBreeds} candidates."
+      },
+      "else": {
+        "exit": "No hypoallergenic breeds returned by Dog API; aborting insights generation."
+      }
+    },
+    {
+      "id": "dog_metrics.compose_summary",
+      "description": "Create a short narrative summarizing the page analysis for reporting purposes.",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "vars": [
+        {
+          "name": "insightSummary",
+          "type": "string",
+          "value": "Page ${dogApiPageNumber} delivered ${totalBreedsReturned} breeds, including ${totalHypoallergenicBreeds} hypoallergenic candidates and ${longLivedBreedsCount} long-lived options."
+        }
+      ]
+    },
+    {
+      "id": "dog_metrics.print_summary",
+      "description": "Log the computed metrics and the summary string for observability dashboards.",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "Insight summary",
+          "variable": "insightSummary"
+        },
+        {
+          "message": "Compact working breeds",
+          "variable": "compactWorkingBreeds"
+        },
+        {
+          "message": "Life expectancy bounds",
+          "variable": "lifeExpectationBounds"
+        },
+        {
+          "message": "Counts overview",
+          "value": {
+            "hypoallergenic": "${totalHypoallergenicBreeds}",
+            "compactWorking": "${compactWorkingBreedsCount}",
+            "longLived": "${longLivedBreedsCount}",
+            "northernWorking": "${totalNorthernWorkingBreeds}"
+          }
+        }
+      ]
+    }
+  ]
+}

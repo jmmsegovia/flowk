@@ -1,0 +1,146 @@
+{
+  "id": "subflows.dog_api_ingestion",
+  "description": "Bootstrap Dog API configuration, fetch a page of breeds, and persist reusable variables for downstream analytics.",
+  "tasks": [
+    {
+      "id": "dog_api.configure_context",
+      "description": "Define base configuration for Dog API discovery and reset previous values.",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "dogApiBaseUrl",
+          "type": "string",
+          "value": "http://127.0.0.1:8091"
+        },
+        {
+          "name": "dogApiBreedsEndpoint",
+          "type": "string",
+          "value": "/breeds"
+        },
+        {
+          "name": "dogApiPageNumber",
+          "type": "number",
+          "value": 1
+        },
+        {
+          "name": "hypoallergenicFlag",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "name": "northernWorkingGroupId",
+          "type": "string",
+          "value": "8000793f-a1ae-4ec4-8d55-ef83f1f644e5"
+        }
+      ]
+    },
+    {
+      "id": "dog_api.announce_start",
+      "description": "Log the discovery intent prior to calling the API.",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "Starting Dog API discovery for page",
+          "variable": "dogApiPageNumber"
+        },
+        {
+          "message": "Target endpoint",
+          "value": "${dogApiBaseUrl}${dogApiBreedsEndpoint}"
+        }
+      ]
+    },
+    {
+      "id": "dog_api.fetch_page",
+      "description": "Retrieve the configured page of dog breeds from the public API.",
+      "action": "HTTP_REQUEST",
+      "protocol": "HTTP",
+      "method": "GET",
+      "url": "${dogApiBaseUrl}${dogApiBreedsEndpoint}?page[number]=${dogApiPageNumber}",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    {
+      "id": "dog_api.evaluate_response",
+      "description": "Ensure the HTTP response is successful and carries at least ten breeds for meaningful analysis.",
+      "action": "EVALUATE",
+      "if_conditions": [
+        {
+          "left": "${from.task:dog_api.fetch_page.result$.response.status}",
+          "operation": "=",
+          "right": "200 OK"
+        },
+        {
+          "left": "${from.task:dog_api.fetch_page.result$.response.body.data.length()}",
+          "operation": ">=",
+          "right": 10
+        }
+      ],
+      "then": {
+        "continue": "Dog API responded with ${from.task:dog_api.fetch_page.result$.response.body.data.length()} breeds on page ${dogApiPageNumber}."
+      },
+      "else": {
+        "exit": "Dog API did not provide enough data for page ${dogApiPageNumber}."
+      }
+    },
+    {
+      "id": "dog_api.persist_variables",
+      "description": "Store the HTTP payload and convenience lists for downstream consumers.",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "vars": [
+        {
+          "name": "dogApiResponseBody",
+          "type": "object",
+          "value": "${from.task:dog_api.fetch_page.result$.response.body}"
+        },
+        {
+          "name": "dogApiBreeds",
+          "type": "array",
+          "value": "${from.task:dog_api.fetch_page.result$.response.body.data}"
+        },
+        {
+          "name": "hypoallergenicBreeds",
+          "type": "array",
+          "value": "${from.task:dog_api.fetch_page.result$.response.body.data[?(@.attributes.hypoallergenic == true)].attributes.name}"
+        },
+        {
+          "name": "totalHypoallergenicBreeds",
+          "type": "number",
+          "value": "${from.task:dog_api.fetch_page.result$.response.body.data[?(@.attributes.hypoallergenic == true)].length()}"
+        },
+        {
+          "name": "northernWorkingBreeds",
+          "type": "array",
+          "value": "${from.task:dog_api.fetch_page.result$.response.body.data[?(@.relationships.group.data.id == '${northernWorkingGroupId}')].attributes.name}"
+        },
+        {
+          "name": "totalNorthernWorkingBreeds",
+          "type": "number",
+          "value": "${from.task:dog_api.fetch_page.result$.response.body.data[?(@.relationships.group.data.id == '${northernWorkingGroupId}')].length()}"
+        }
+      ]
+    },
+    {
+      "id": "dog_api.print_overview",
+      "description": "Summarize the fetched data, highlighting hypoallergenic breeds and pagination details.",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "Hypoallergenic breeds",
+          "variable": "hypoallergenicBreeds"
+        },
+        {
+          "message": "Northern working group breeds",
+          "variable": "northernWorkingBreeds"
+        },
+        {
+          "message": "Pagination info",
+          "value": "${from.task:dog_api.fetch_page.result$.response.body.meta.pagination}"
+        }
+      ]
+    }
+  ]
+}

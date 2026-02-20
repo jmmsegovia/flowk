@@ -1,0 +1,36 @@
+{
+  "id": "subflows.print_final_result_subflow",
+  "description": "Prints the final result",
+  "tasks": [
+    {
+      "id": "print.final_result",
+      "description": "Displays the details of each operation and the final counter value",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "After adding the increment",
+          "taskId": "vars.increment_counter",
+          "field": "result$.counter"
+        },
+        {
+          "message": "After multiplying",
+          "taskId": "vars.multiply_counter",
+          "field": "result$.counter"
+        },
+        {
+          "message": "After subtracting",
+          "taskId": "vars.subtract_counter",
+          "field": "result$.counter"
+        },
+        {
+          "message": "Final result after dividing",
+          "variable": "counter"
+        },
+        {
+          "message": "Applied formula",
+          "value": "(( ${from.task:vars.initial_declaration.result$.counter} + ${increment} ) * ${multiplier} - ${decrement}) / ${divisor} = ${counter}"
+        }
+      ]
+    }
+  ]
+}

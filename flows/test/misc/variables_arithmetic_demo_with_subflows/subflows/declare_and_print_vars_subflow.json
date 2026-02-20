@@ -1,0 +1,68 @@
+{
+  "id": "subflows.declare_and_print_vars_subflow",
+  "description": "Subflow that declares variables and prints their initial state",
+  "tasks": [
+    {
+      "id": "vars.initial_declaration",
+      "description": "Declares the base numeric variables and reusable operands",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "counter",
+          "type": "number",
+          "value": 10
+        },
+        {
+          "name": "increment",
+          "type": "number",
+          "value": 5
+        },
+        {
+          "name": "multiplier",
+          "type": "number",
+          "value": 3
+        },
+        {
+          "name": "decrement",
+          "type": "number",
+          "value": 4
+        },
+        {
+          "name": "divisor",
+          "type": "number",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "print.initial_state",
+      "description": "Prints the initial state of the numeric variables",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "Initial counter value",
+          "taskId": "vars.initial_declaration",
+          "field": "result$.counter"
+        },
+        {
+          "message": "Increment to apply",
+          "variable": "increment"
+        },
+        {
+          "message": "Multiplier",
+          "variable": "multiplier"
+        },
+        {
+          "message": "Decrement",
+          "variable": "decrement"
+        },
+        {
+          "message": "Divisor",
+          "variable": "divisor"
+        }
+      ]
+    }
+  ]
+}

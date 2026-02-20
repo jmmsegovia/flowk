@@ -1,0 +1,74 @@
+{
+  "id": "subflows.variable_operations_subflow",
+  "description": "Performs arithmetic operations with the declared variables",
+  "tasks": [
+    {
+      "id": "vars.increment_counter",
+      "description": "Increases the counter by adding the value of the increment variable",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "counter",
+          "type": "number",
+          "operation": {
+            "operator": "add",
+            "variable": "increment"
+          }
+        }
+      ]
+    },
+    {
+      "id": "vars.multiply_counter",
+      "description": "Multiplies the counter by the configured multiplier",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "counter",
+          "type": "number",
+          "operation": {
+            "operator": "multiply",
+            "variable": "multiplier"
+          }
+        }
+      ]
+    },
+    {
+      "id": "vars.subtract_counter",
+      "description": "Subtracts the decrement from the updated counter",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "counter",
+          "type": "number",
+          "operation": {
+            "operator": "-",
+            "variable": "decrement"
+          }
+        }
+      ]
+    },
+    {
+      "id": "vars.divide_counter",
+      "description": "Divides the counter to obtain the final result",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "counter",
+          "type": "number",
+          "operation": {
+            "operator": "divide",
+            "variable": "divisor"
+          }
+        }
+      ]
+    }
+  ]
+}

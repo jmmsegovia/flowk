@@ -1,0 +1,166 @@
+{
+  "id": "variables_arithmetic_demo",
+  "description": "Sample flow that demonstrates the arithmetic operations available in VARIABLES",
+  "tasks": [
+    {
+      "id": "vars.initial_declaration",
+      "description": "Declares the base numeric variables and reusable operands",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "counter",
+          "type": "number",
+          "value": 10
+        },
+        {
+          "name": "increment",
+          "type": "number",
+          "value": 5
+        },
+        {
+          "name": "multiplier",
+          "type": "number",
+          "value": 3
+        },
+        {
+          "name": "decrement",
+          "type": "number",
+          "value": 4
+        },
+        {
+          "name": "divisor",
+          "type": "number",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "print.initial_state",
+      "description": "Prints the initial state of the numeric variables",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "Initial counter value",
+          "taskId": "vars.initial_declaration",
+          "field": "result$.counter"
+        },
+        {
+          "message": "Increment to apply",
+          "variable": "increment"
+        },
+        {
+          "message": "Multiplier",
+          "variable": "multiplier"
+        },
+        {
+          "message": "Decrement",
+          "variable": "decrement"
+        },
+        {
+          "message": "Divisor",
+          "variable": "divisor"
+        }
+      ]
+    },
+    {
+      "id": "vars.increment_counter",
+      "description": "Increases the counter by adding the value of the increment variable",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "counter",
+          "type": "number",
+          "operation": {
+            "operator": "add",
+            "variable": "increment"
+          }
+        }
+      ]
+    },
+    {
+      "id": "vars.multiply_counter",
+      "description": "Multiplies the counter by the configured multiplier",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "counter",
+          "type": "number",
+          "operation": {
+            "operator": "multiply",
+            "variable": "multiplier"
+          }
+        }
+      ]
+    },
+    {
+      "id": "vars.subtract_counter",
+      "description": "Subtracts the decrement from the updated counter",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "counter",
+          "type": "number",
+          "operation": {
+            "operator": "-",
+            "variable": "decrement"
+          }
+        }
+      ]
+    },
+    {
+      "id": "vars.divide_counter",
+      "description": "Divides the counter to obtain the final result",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "counter",
+          "type": "number",
+          "operation": {
+            "operator": "divide",
+            "variable": "divisor"
+          }
+        }
+      ]
+    },
+    {
+      "id": "print.final_result",
+      "description": "Displays the details of each operation and the final counter value",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "After adding the increment",
+          "taskId": "vars.increment_counter",
+          "field": "result$.counter"
+        },
+        {
+          "message": "After multiplying",
+          "taskId": "vars.multiply_counter",
+          "field": "result$.counter"
+        },
+        {
+          "message": "After subtracting",
+          "taskId": "vars.subtract_counter",
+          "field": "result$.counter"
+        },
+        {
+          "message": "Final result after dividing",
+          "variable": "counter"
+        },
+        {
+          "message": "Applied formula",
+          "value": "(( ${from.task:vars.initial_declaration.result$.counter} + ${increment} ) * ${multiplier} - ${decrement}) / ${divisor} = ${counter}"
+        }
+      ]
+    }
+  ]
+}

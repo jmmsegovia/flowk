@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mysql-lite.fullname" . }}
+  labels:
+{{ include "mysql-lite.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "mysql-lite.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "mysql-lite.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: mysql
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: {{ .Values.env.rootPassword | quote }}
+            - name: MYSQL_DATABASE
+              value: {{ .Values.env.database | quote }}
+            - name: MYSQL_USER
+              value: {{ .Values.env.user | quote }}
+            - name: MYSQL_PASSWORD
+              value: {{ .Values.env.password | quote }}
+          ports:
+            - name: mysql
+              containerPort: {{ .Values.service.port }}
+          readinessProbe:
+            tcpSocket:
+              port: mysql
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: mysql
+            initialDelaySeconds: 10
+            periodSeconds: 10

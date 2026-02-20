@@ -1,0 +1,53 @@
+{
+  "definitions": {
+    "task": {
+      "properties": {
+        "action": {
+          "enum": ["PARALLEL"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Task description"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "PARALLEL"
+              }
+            },
+            "required": ["action"]
+          },
+          "then": {
+            "required": [
+              "id",
+              "action",
+              "tasks"
+            ],
+            "properties": {
+              "fail_fast": {
+                "type": "boolean"
+              },
+              "merge_strategy": {
+                "type": "string",
+                "enum": [
+                  "last_write_wins",
+                  "fail_on_conflict"
+                ]
+              },
+              "merge_order": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

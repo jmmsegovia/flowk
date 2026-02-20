@@ -1,0 +1,35 @@
+  {
+  "id": "docker_telnet_local_setup",
+  "description": "Start a local Telnet server container for TELNET flows.",
+  "tasks": [
+    {
+      "id": "docker.pull.alpine.telnet",
+      "action": "DOCKER",
+      "operation": "IMAGE_PULL",
+      "image": "alpine:3.19"
+    },
+    {
+      "id": "docker.run.telnetd",
+      "action": "DOCKER",
+      "operation": "CONTAINER_RUN",
+      "image": "alpine:3.19",
+      "name": "flowk-telnet",
+      "detach": true,
+      "remove_existing": true,
+      "ports": [
+        "4101:4101"
+      ],
+      "command": [
+        "sh",
+        "-lc",
+        "apk add --no-cache busybox-extras >/dev/null && telnetd -F -p 4101 -l /bin/sh"
+      ]
+    },
+    {
+      "id": "sleep.telnetd_boot",
+      "description": "Wait for the Telnet server to accept connections.",
+      "action": "SLEEP",
+      "seconds": 2
+    }
+  ]
+}

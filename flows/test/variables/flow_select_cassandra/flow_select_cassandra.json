@@ -1,0 +1,67 @@
+{
+  "id": "flow_select_cassandra",
+  "description": "Test flow",
+  "imports": [
+    "./subflows/docker_cassandra_local.json"
+  ],
+  "tasks": [
+    {
+      "id": "vars.cassandra_platforms",
+      "description": "Declare Cassandra platform configurations",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "us-east4",
+          "type": "object",
+          "value": {
+            "cassandra": {
+              "cluster": "localhost",
+              "port": "9042",
+              "keyspaces": [
+                {
+                  "name": "shop",
+                  "user": "cassandra",
+                  "password": "cassandra"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "dispatcher",
+          "type": "object",
+          "value": {
+            "cassandra": {
+              "cluster": "localhost",
+              "port": "9042",
+              "keyspaces": [
+                {
+                  "name": "analytics",
+                  "type": "dispatcher",
+                  "user": "cassandra",
+                  "password": "cassandra"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "table_var",
+          "type": "string",
+          "value": "customers"
+        }
+      ]
+    },
+    {
+      "id": "check_connection_all_us-east4",
+      "description": "Check connection for all_us-east4.",
+      "platform": "${us-east4}",
+      "action": "DB_CASSANDRA_OPERATION",
+      "operation": "CQL",
+      "keyspace": "shop",
+      "command": "select * from ${table_var}"
+    }
+  ]
+}

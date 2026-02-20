@@ -1,0 +1,223 @@
+{
+  "definitions": {
+    "task": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "enum": ["HELM"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Task description."
+        },
+        "operation": {
+          "type": "string",
+          "description": "Helm operation to execute."
+        },
+        "repository_name": {
+          "type": "string",
+          "description": "Repository alias used by REPO_ADD.",
+          "minLength": 1
+        },
+        "repository_url": {
+          "type": "string",
+          "description": "Repository URL used by REPO_ADD.",
+          "format": "uri"
+        },
+        "query": {
+          "type": "string",
+          "description": "Search query for SEARCH_REPO.",
+          "minLength": 1
+        },
+        "release_name": {
+          "type": "string",
+          "description": "Release name used by install/upgrade/get/status/history/uninstall operations.",
+          "minLength": 1
+        },
+        "chart": {
+          "type": "string",
+          "description": "Chart reference or local chart path.",
+          "minLength": 1
+        },
+        "namespace": {
+          "type": "string",
+          "description": "Target Kubernetes namespace.",
+          "minLength": 1
+        },
+        "kube_context": {
+          "type": "string",
+          "description": "Optional kube context name.",
+          "minLength": 1
+        },
+        "values_files": {
+          "type": "array",
+          "description": "Values files to pass via --values.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "set_values": {
+          "type": "array",
+          "description": "Key/value overrides in KEY=VALUE format.",
+          "items": {
+            "type": "string",
+            "pattern": "^[^=]+=.+$"
+          }
+        },
+        "version": {
+          "type": "string",
+          "description": "Chart version constraint.",
+          "minLength": 1
+        },
+        "destination": {
+          "type": "string",
+          "description": "Destination directory used by CREATE.",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "integer",
+          "description": "Target revision for ROLLBACK.",
+          "minimum": 1
+        },
+        "create_namespace": {
+          "type": "boolean",
+          "description": "When true, add --create-namespace."
+        },
+        "wait": {
+          "type": "boolean",
+          "description": "When true, wait for resources to become ready."
+        },
+        "timeout_seconds": {
+          "type": "number",
+          "description": "Timeout in seconds.",
+          "minimum": 0
+        },
+        "all_namespaces": {
+          "type": "boolean",
+          "description": "When true, list releases across namespaces (LIST only)."
+        },
+        "include_all": {
+          "type": "boolean",
+          "description": "When true, include all values for GET_VALUES."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "When true, run command in dry-run mode."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "HELM"
+              }
+            },
+            "required": ["action"]
+          },
+          "then": {
+            "required": ["id", "action", "operation"],
+            "properties": {
+              "operation": {
+                "enum": [
+                  "REPO_ADD",
+                  "REPO_UPDATE",
+                  "REPO_LIST",
+                  "SEARCH_REPO",
+                  "INSTALL",
+                  "UPGRADE",
+                  "UPGRADE_INSTALL",
+                  "LIST",
+                  "STATUS",
+                  "GET_VALUES",
+                  "GET_ALL",
+                  "HISTORY",
+                  "ROLLBACK",
+                  "UNINSTALL",
+                  "SHOW_VALUES",
+                  "SHOW_CHART",
+                  "TEMPLATE",
+                  "LINT",
+                  "CREATE"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": { "const": "HELM" },
+              "operation": { "const": "REPO_ADD" }
+            },
+            "required": ["action", "operation"]
+          },
+          "then": {
+            "required": ["repository_name", "repository_url"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": { "const": "HELM" },
+              "operation": { "const": "SEARCH_REPO" }
+            },
+            "required": ["action", "operation"]
+          },
+          "then": {
+            "required": ["query"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": { "const": "HELM" },
+              "operation": { "enum": ["INSTALL", "UPGRADE", "UPGRADE_INSTALL", "TEMPLATE"] }
+            },
+            "required": ["action", "operation"]
+          },
+          "then": {
+            "required": ["release_name", "chart"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": { "const": "HELM" },
+              "operation": { "enum": ["STATUS", "GET_VALUES", "GET_ALL", "HISTORY", "UNINSTALL"] }
+            },
+            "required": ["action", "operation"]
+          },
+          "then": {
+            "required": ["release_name"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": { "const": "HELM" },
+              "operation": { "const": "ROLLBACK" }
+            },
+            "required": ["action", "operation"]
+          },
+          "then": {
+            "required": ["release_name", "revision"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": { "const": "HELM" },
+              "operation": { "enum": ["SHOW_VALUES", "SHOW_CHART", "LINT", "CREATE"] }
+            },
+            "required": ["action", "operation"]
+          },
+          "then": {
+            "required": ["chart"]
+          }
+        }
+      ]
+    }
+  }
+}

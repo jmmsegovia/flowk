@@ -1,0 +1,145 @@
+{
+  "id": "subflows.k8_cicd_vars",
+  "description": "Define shared Kubernetes, Helm, and MySQL variables for the CI/CD flow.",
+  "tasks": [
+    {
+      "id": "vars.cicd_context",
+      "description": "Set Kubernetes + Helm defaults for the flow.",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "kube_context",
+          "type": "string",
+          "value": "docker-desktop"
+        },
+        {
+          "name": "kube_namespace",
+          "type": "string",
+          "value": "cicd"
+        },
+        {
+          "name": "helm_repo_name",
+          "type": "string",
+          "value": "bitnami"
+        },
+        {
+          "name": "mysql_chart",
+          "type": "string",
+          "value": "./flows/test/kubernetes/charts/mysql-lite"
+        },
+        {
+          "name": "mysql_release_base",
+          "type": "string",
+          "value": "ci-mysql"
+        },
+        {
+          "name": "mysql_local_port",
+          "type": "string",
+          "value": "3307"
+        },
+        {
+          "name": "mysql_root_password",
+          "type": "string",
+          "value": "flowk"
+        },
+        {
+          "name": "mysql_user",
+          "type": "string",
+          "value": "flowk"
+        },
+        {
+          "name": "mysql_password",
+          "type": "string",
+          "value": "flowk"
+        },
+        {
+          "name": "mysql_database",
+          "type": "string",
+          "value": "flowk_db"
+        },
+        {
+          "name": "app_chart",
+          "type": "string",
+          "value": "bitnami/nginx"
+        },
+        {
+          "name": "app_release_base",
+          "type": "string",
+          "value": "ci-app"
+        }
+      ]
+    },
+    {
+      "id": "vars.mysql_platform",
+      "description": "Define the MySQL platform configuration used by DB tasks.",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "platform_mysql_port_forward",
+          "type": "object",
+          "value": {
+            "name": "k8_mysql_port_forward",
+            "mysql": {
+              "host": "127.0.0.1",
+              "port": "${mysql_local_port}",
+              "databases": [
+                {
+                  "name": "${mysql_database}",
+                  "user": "${mysql_user}",
+                  "password": "${mysql_password}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "vars.release_names",
+      "description": "Compute release names for the Helm installs.",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "mysql_release",
+          "type": "string",
+          "value": "${mysql_release_base}"
+        },
+        {
+          "name": "app_release",
+          "type": "string",
+          "value": "${app_release_base}"
+        }
+      ]
+    },
+    {
+      "id": "vars.resource_names",
+      "description": "Capture derived resource names created by the Helm charts.",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "mysql_service",
+          "type": "string",
+          "value": "${mysql_release}"
+        },
+        {
+          "name": "mysql_deployment",
+          "type": "string",
+          "value": "${mysql_release}"
+        },
+        {
+          "name": "app_deployment",
+          "type": "string",
+          "value": "${app_release}-nginx"
+        }
+      ]
+    }
+  ]
+}

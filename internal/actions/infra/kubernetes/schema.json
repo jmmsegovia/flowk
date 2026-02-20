@@ -1,0 +1,246 @@
+{
+  "definitions": {
+    "task": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "enum": ["KUBERNETES"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Task description"
+        },
+        "context": {
+          "type": "string",
+          "description": "Kubernetes context to use from the kubeconfig."
+        },
+        "namespace": {
+          "type": "string",
+          "description": "Namespace to target. Defaults to the current kubeconfig namespace or 'default'."
+        },
+        "operation": {
+          "type": "string",
+          "description": "Kubernetes operation to execute"
+        },
+        "deployments": {
+          "type": "array",
+          "description": "Deployment names to target.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "replicas": {
+          "type": "integer",
+          "description": "Replica count used for SCALE operations.",
+          "minimum": 0
+        },
+        "kubeconfig": {
+          "type": "string",
+          "description": "Optional path to a kubeconfig file."
+        },
+        "pod": {
+          "type": "array",
+          "description": "Pod names to target for GET_LOGS (mutually exclusive with deployments).",
+          "items": {
+            "type": "string"
+          }
+        },
+        "container": {
+          "type": "string",
+          "description": "Optional container name used for GET_LOGS."
+        },
+        "since_time": {
+          "type": "string",
+          "description": "RFC3339 timestamp used for GET_LOGS."
+        },
+        "since_pod_start": {
+          "type": "boolean",
+          "description": "When true, GET_LOGS starts from the pod start time."
+        },
+        "service": {
+          "type": "string",
+          "description": "Service name used for PORT_FORWARD operations."
+        },
+        "local_port": {
+          "type": "integer",
+          "description": "Local port used for PORT_FORWARD or STOP_PORT_FORWARD operations.",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "service_port": {
+          "type": "integer",
+          "description": "Service port used for PORT_FORWARD operations.",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "max_wait_seconds": {
+          "type": "number",
+          "description": "Maximum wait time for WAIT_FOR_POD_READINESS operations.",
+          "minimum": 0
+        },
+        "poll_interval_seconds": {
+          "type": "number",
+          "description": "Polling interval for WAIT_FOR_POD_READINESS operations.",
+          "minimum": 0
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "KUBERNETES"
+              }
+            },
+            "required": ["action"]
+          },
+          "then": {
+            "required": ["operation"],
+            "properties": {
+              "operation": {
+                "enum": [
+                  "GET_PODS",
+                  "GET_DEPLOYMENTS",
+                  "GET_LOGS",
+                  "SCALE",
+                  "PORT_FORWARD",
+                  "STOP_PORT_FORWARD",
+                  "WAIT_FOR_POD_READINESS"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "KUBERNETES"
+              },
+              "operation": {
+                "not": {
+                  "const": "STOP_PORT_FORWARD"
+                }
+              }
+            },
+            "required": ["action"]
+          },
+          "then": {
+            "required": [
+              "id",
+              "action",
+              "context",
+              "operation"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "KUBERNETES"
+              },
+              "operation": {
+                "const": "STOP_PORT_FORWARD"
+              }
+            },
+            "required": [
+              "action",
+              "operation"
+            ]
+          },
+          "then": {
+            "required": [
+              "id",
+              "action",
+              "operation",
+              "local_port"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "KUBERNETES"
+              },
+              "operation": {
+                "const": "SCALE"
+              }
+            },
+            "required": [
+              "action",
+              "operation"
+            ]
+          },
+          "then": {
+            "required": [
+              "id",
+              "action",
+              "context",
+              "operation",
+              "namespace",
+              "deployments",
+              "replicas"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "KUBERNETES"
+              },
+              "operation": {
+                "const": "WAIT_FOR_POD_READINESS"
+              }
+            },
+            "required": [
+              "action",
+              "operation"
+            ]
+          },
+          "then": {
+            "required": [
+              "id",
+              "action",
+              "context",
+              "operation",
+              "namespace",
+              "deployments",
+              "max_wait_seconds",
+              "poll_interval_seconds"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "KUBERNETES"
+              },
+              "operation": {
+                "const": "PORT_FORWARD"
+              }
+            },
+            "required": [
+              "action",
+              "operation"
+            ]
+          },
+          "then": {
+            "required": [
+              "id",
+              "action",
+              "context",
+              "operation",
+              "service",
+              "local_port",
+              "service_port"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

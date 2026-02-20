@@ -1,0 +1,118 @@
+{
+  "id": "bitcoin_conversion_flow",
+  "description": "Fetches Bitcoin conversion rates from CryptoCompare and prints a summary for USD, EUR, and GBP.",
+  "tasks": [
+    {
+      "id": "vars.configure_api",
+      "description": "Defines the CryptoCompare endpoint used to query Bitcoin conversion rates",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "cryptoCompareBaseUrl",
+          "type": "string",
+          "value": "https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms="
+        }
+      ]
+    },
+    {
+      "id": "parallel.fetch_rates",
+      "description": "Fetches BTC conversion rates for USD, EUR, and GBP in parallel",
+      "action": "PARALLEL",
+      "fail_fast": false,
+      "merge_strategy": "last_write_wins",
+      "merge_order": [
+        "quote.usd",
+        "quote.eur",
+        "quote.gbp"
+      ],
+      "tasks": [
+        {
+          "id": "quote.usd",
+          "description": "Requests the BTC to USD conversion rate",
+          "action": "HTTP_REQUEST",
+          "protocol": "HTTPS",
+          "method": "GET",
+          "url": "${cryptoCompareBaseUrl}USD",
+          "headers": {
+            "Accept": "application/json"
+          }
+        },
+        {
+          "id": "quote.eur",
+          "description": "Requests the BTC to EUR conversion rate",
+          "action": "HTTP_REQUEST",
+          "protocol": "HTTPS",
+          "method": "GET",
+          "url": "${cryptoCompareBaseUrl}EUR",
+          "headers": {
+            "Accept": "application/json"
+          }
+        },
+        {
+          "id": "quote.gbp",
+          "description": "Requests the BTC to GBP conversion rate",
+          "action": "HTTP_REQUEST",
+          "protocol": "HTTPS",
+          "method": "GET",
+          "url": "${cryptoCompareBaseUrl}GBP",
+          "headers": {
+            "Accept": "application/json"
+          }
+        }
+      ]
+    },
+    {
+      "id": "vars.extract_rates",
+      "description": "Stores the conversion rates from the CryptoCompare responses",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "rateTimestamp",
+          "type": "string",
+          "value": "${from.task:parallel.fetch_rates.result$['quote.usd'].result.response.headers['Date']}"
+        },
+        {
+          "name": "btcUsd",
+          "type": "number",
+          "value": "${from.task:parallel.fetch_rates.result$['quote.usd'].result.response.body.USD}"
+        },
+        {
+          "name": "btcEur",
+          "type": "number",
+          "value": "${from.task:parallel.fetch_rates.result$['quote.eur'].result.response.body.EUR}"
+        },
+        {
+          "name": "btcGbp",
+          "type": "number",
+          "value": "${from.task:parallel.fetch_rates.result$['quote.gbp'].result.response.body.GBP}"
+        }
+      ]
+    },
+    {
+      "id": "print.conversion_summary",
+      "description": "Outputs the formatted BTC conversion rates",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "The current Bitcoin exchange rates as of ${rateTimestamp}"
+        },
+        {
+          "message": "USD",
+          "value": "${btcUsd}"
+        },
+        {
+          "message": "EUR",
+          "value": "${btcEur}"
+        },
+        {
+          "message": "GBP",
+          "value": "${btcGbp}"
+        }
+      ]
+    }
+  ]
+}

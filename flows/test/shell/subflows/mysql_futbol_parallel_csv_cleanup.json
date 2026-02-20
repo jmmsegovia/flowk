@@ -1,0 +1,54 @@
+{
+  "id": "subflows.mysql_futbol_parallel_csv.cleanup",
+  "description": "Clean up CSV artifacts and MySQL Docker resources.",
+  "tasks": [
+    {
+      "id": "shell.csv.cleanup",
+      "description": "Remove temporary CSV from host",
+      "action": "SHELL",
+      "command": [
+        "set -euo pipefail",
+        "rm -f ${csv_file_host}"
+      ],
+      "shell": {
+        "program": "/bin/bash",
+        "args": [
+          "-lc"
+        ]
+      },
+      "continueOnError": true
+    },
+    {
+      "id": "truncate_all_tables_mysql",
+      "description": "Truncate all tables in flowk_db",
+      "platform": "${platform_mysql_local}",
+      "action": "DB_MYSQL_OPERATION",
+      "operation": "TRUNCATE_ALL_TABLES",
+      "database": "flowk_db"
+    },
+    {
+      "id": "docker.container.stop.mysql",
+      "description": "Stop MySQL container",
+      "action": "DOCKER",
+      "operation": "CONTAINER_STOP",
+      "container": "${mysql_container_name}",
+      "continueOnError": true
+    },
+    {
+      "id": "docker.container.remove.mysql",
+      "description": "Remove MySQL container",
+      "action": "DOCKER",
+      "operation": "CONTAINER_REMOVE",
+      "container": "${mysql_container_name}",
+      "continueOnError": true
+    },
+    {
+      "id": "docker.image.remove.mysql",
+      "description": "Remove MySQL Docker image",
+      "action": "DOCKER",
+      "operation": "IMAGE_REMOVE",
+      "image": "${mysql_image}",
+      "continueOnError": true
+    }
+  ]
+}

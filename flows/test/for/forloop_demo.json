@@ -1,0 +1,44 @@
+{
+  "id": "forloop_demo",
+  "description": "Demonstrates the FOR action with nested tasks",
+  "tasks": [
+    {
+      "id": "loop_numbers",
+      "description": "Iterate from 1 to 10 and print the counter",
+      "action": "FOR",
+      "variable": "loop_counter",
+      "initial": 1,
+      "condition": {
+        "operator": "<=",
+        "value": 10
+      },
+      "step": 1,
+      "tasks": [
+        {
+          "id": "print_iteration",
+          "description": "Log the current counter value",
+          "action": "PRINT",
+          "entries": [
+            {
+              "message": "Iteration ${loop_counter}"
+            }
+          ]
+        },
+        {
+          "id": "store_last_counter",
+          "description": "Store the latest counter in a flow variable",
+          "action": "VARIABLES",
+          "scope": "flow",
+          "overwrite": true,
+          "vars": [
+            {
+              "name": "loop_last",
+              "type": "number",
+              "value": "${loop_counter}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

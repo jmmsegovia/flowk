@@ -1,0 +1,144 @@
+{
+  "app": {
+    "title": "FlowK UI",
+    "header": "Constructor de flujos",
+    "languageLabel": "Idioma"
+  },
+  "nav": {
+    "flows": "Flujos",
+    "actions": "Guía de actions"
+  },
+  "buttons": {
+    "importFlow": "Importar flujo",
+    "newFlow": "Nuevo flujo",
+    "save": "Guardar cambios",
+    "run": "Ejecutar flujo",
+    "running": "Ejecutando...",
+    "runTask": "Ejecutar tarea",
+    "runningTask": "Ejecutando tarea...",
+    "stopAtTask": "Parar en tarea",
+    "stopFlow": "Detener flujo",
+    "stoppingFlow": "Deteniendo...",
+    "resumeFromTask": "Reanudar desde tarea",
+    "addTask": "Añadir tarea",
+    "open": "Abrir",
+    "delete": "Cerrar"
+  },
+  "flowBuilder": {
+    "noFlowTitle": "No hay flujo seleccionado",
+    "noFlowDescription": "Importa un archivo JSON desde la página de Flujos para comenzar a construir y ejecutar.",
+    "tasksTitle": "Tareas",
+    "tabs": {
+      "inspector": "Inspector",
+      "execution": "Ejecución",
+      "notes": "Notas"
+    },
+    "runError": "Ocurrió un error al iniciar la ejecución.",
+    "resumeError": "Ocurrió un error al reanudar la ejecución.",
+    "stopError": "Ocurrió un error al detener la ejecución.",
+    "stopAtError": "Ocurrió un error al marcar la tarea de parada."
+  },
+  "flowList": {
+    "title": "Flujos disponibles",
+    "description": "Selecciona un flujo para editarlo en el constructor visual. Puedes importar archivos JSON existentes o crear nuevas definiciones.",
+    "empty": "Todavía no hay flujos cargados. Usa 'Importar flujo' para comenzar.",
+    "taskCount": "{{count}} tareas"
+  },
+  "actionGuide": {
+    "title": "Actions y operaciones",
+    "description": "Consulta este catálogo para que los modelos generen payloads válidos de FlowK. La información se arma dinámicamente con las actions registradas.",
+    "download": "Descargar Markdown",
+    "generated": "Generado {{date}}",
+    "loading": "Cargando catálogo de actions...",
+    "error": "No se pudo cargar la guía de actions.",
+    "errorWithMessage": "No se pudo cargar la guía de actions: {{message}}",
+    "primerTitle": "Cómo generar archivos JSON de FlowK",
+    "indexTitle": "Lista de actions",
+    "required": "Campos requeridos",
+    "optional": "Campos opcionales",
+    "operations": "Operaciones",
+    "allowedValues": "Valores permitidos",
+    "example": "Ejemplo de tarea",
+    "noOperations": "Esta action no declara operaciones específicas.",
+    "none": "Sin campos documentados en esta sección",
+    "back": "Volver a la guía de actions",
+    "detailDescription": "Referencia de la acción basada en el Markdown interno.",
+    "notFound": "No encontramos esta acción.",
+    "noHelp": "No hay ayuda en Markdown para esta acción.",
+    "groupCount": "{{count}} acción",
+    "groupCount_plural": "{{count}} acciones",
+    "categories": {
+      "auth": "Autenticación",
+      "core": "Núcleo",
+      "db": "Base de datos",
+      "infra": "Infraestructura",
+      "network": "Red",
+      "security": "Seguridad",
+      "storage": "Almacenamiento",
+      "system": "Sistema",
+      "other": "Otros"
+    }
+  },
+  "imports": {
+    "title": "Subflows",
+    "empty": "Sin subflows cargados"
+  },
+  "timeline": {
+    "title": "Timeline de ejecución",
+    "action": "Acción",
+    "operation": "Operación",
+    "statusFallback": "sin estado",
+    "startLabel": "Inicio",
+    "endLabel": "Fin",
+    "noTime": "Sin información temporal",
+    "duration": "Duración (s)",
+    "success": "Éxito",
+    "sortedByTime": "Ordenado por tiempo"
+  },
+  "taskInspector": {
+    "title": "Inspector de tarea",
+    "statusUnknown": "Sin estado",
+    "resultTitle": "Result data",
+    "resultSubtitle": "Result data",
+    "definitionTitle": "Definición",
+    "definitionJson": "Definición JSON",
+    "runtimeTitle": "Datos de ejecución",
+    "runtimeEmpty": "No hay datos de ejecución disponibles. La tarea aún no se ha ejecutado.",
+    "resultEmpty": "Aún no hay resultado disponible.",
+    "metadataTitle": "Task metadata",
+    "logsTitle": "Logs",
+    "logsEmpty": "No hay registros para esta tarea.",
+    "fields": {
+      "id": "Identificador",
+      "description": "Descripción",
+      "action": "Acción",
+      "operation": "Operación",
+      "status": "Estado",
+      "success": "Éxito",
+      "resultType": "Tipo de resultado",
+      "startedAt": "Inicio",
+      "finishedAt": "Fin",
+      "durationSeconds": "Duración (s)"
+    }
+  },
+  "taskNode": {
+    "action": "Acción",
+    "operation": "Operación",
+    "id": "ID",
+    "status": "Estado",
+    "success": "Success",
+    "statusFallback": "Sin estado"
+  },
+  "flowRunner": {
+    "error": "Ocurrió un error al ejecutar el flujo."
+  },
+  "appShell": {
+    "feedback": {
+      "success": "Flujo '{{flowId}}' importado correctamente.",
+      "error": "No se pudo importar el flujo: {{message}}",
+      "readError": "No se pudo leer el archivo seleccionado.",
+      "invalidFile": "El archivo no es texto válido.",
+      "unknown": "Error desconocido"
+    }
+  }
+}

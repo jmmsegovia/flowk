@@ -1,0 +1,36 @@
+{
+  "definitions": {
+    "task": {
+      "properties": {
+        "action": {
+          "enum": ["EVALUATE"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Task description"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "EVALUATE"
+              }
+            },
+            "required": ["action"]
+          },
+          "then": {
+            "required": [
+              "id",
+              "action",
+              "if_conditions",
+              "then",
+              "else"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

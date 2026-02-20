@@ -1,0 +1,122 @@
+{
+  "id": "helm_release_lifecycle_demo",
+  "description": "Demonstrates repository management, chart search, install/status/history, and cleanup with the HELM action.",
+  "tasks": [
+    {
+      "id": "vars.release_context",
+      "action": "VARIABLES",
+      "description": "Define shared Helm values used by the lifecycle tasks.",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "base_release_name",
+          "type": "string",
+          "value": "demo-nginx"
+        },
+        {
+          "name": "helm_chart",
+          "type": "string",
+          "value": "bitnami/nginx"
+        },
+        {
+          "name": "helm_namespace",
+          "type": "string",
+          "value": "apps"
+        }
+      ]
+    },
+    {
+      "id": "shell.release_suffix",
+      "action": "SHELL",
+      "description": "Generate a unique suffix to avoid release name collisions.",
+      "command": [
+        "set -euo pipefail",
+        "printf '%s' \"$(date -u +%Y%m%d%H%M%S)\""
+      ],
+      "shell": {
+        "program": "/bin/bash",
+        "args": [
+          "-lc"
+        ]
+      }
+    },
+    {
+      "id": "vars.release_name",
+      "action": "VARIABLES",
+      "description": "Compose the final release name with the generated suffix.",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "release_name",
+          "type": "string",
+          "value": "${base_release_name}-${from.task:shell.release_suffix.result$.stdout}"
+        }
+      ]
+    },
+    {
+      "id": "repo_add_bitnami",
+      "action": "HELM",
+      "description": "Register the Bitnami chart repository.",
+      "operation": "REPO_ADD",
+      "repository_name": "bitnami",
+      "repository_url": "https://charts.bitnami.com/bitnami"
+    },
+    {
+      "id": "repo_update",
+      "action": "HELM",
+      "description": "Refresh all local repository indices.",
+      "operation": "REPO_UPDATE"
+    },
+    {
+      "id": "search_nginx",
+      "action": "HELM",
+      "description": "Search for nginx-related charts in configured repositories.",
+      "operation": "SEARCH_REPO",
+      "query": "${helm_chart}"
+    },
+    {
+      "id": "install_nginx",
+      "action": "HELM",
+      "description": "Install the nginx chart into the target namespace.",
+      "operation": "INSTALL",
+      "release_name": "${release_name}",
+      "chart": "${helm_chart}",
+      "namespace": "${helm_namespace}",
+      "create_namespace": true,
+      "wait": true,
+      "timeout_seconds": 180,
+      "set_values": [
+        "service.type=ClusterIP",
+        "replicaCount=2"
+      ]
+    },
+    {
+      "id": "release_status",
+      "action": "HELM",
+      "description": "Inspect release status after installation.",
+      "operation": "STATUS",
+      "release_name": "${release_name}",
+      "namespace": "${helm_namespace}"
+    },
+    {
+      "id": "release_history",
+      "action": "HELM",
+      "description": "Fetch release history for auditing.",
+      "operation": "HISTORY",
+      "release_name": "${release_name}",
+      "namespace": "${helm_namespace}"
+    },
+    {
+      "id": "release_uninstall",
+      "action": "HELM",
+      "description": "Uninstall the release to complete the lifecycle demo.",
+      "operation": "UNINSTALL",
+      "release_name": "${release_name}",
+      "namespace": "${helm_namespace}",
+      "wait": true,
+      "timeout_seconds": 180
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "id": "subflows.mysql_futbol_parallel_csv.queries",
+  "description": "Run parallel football queries and validate expected results.",
+  "tasks": [
+    {
+      "id": "parallel.futbol_queries",
+      "description": "Run football queries in parallel",
+      "action": "PARALLEL",
+      "fail_fast": false,
+      "merge_strategy": "last_write_wins",
+      "merge_order": [
+        "query.player_count",
+        "query.team_summary",
+        "query.goal_sum"
+      ],
+      "tasks": [
+        {
+          "id": "query.player_count",
+          "description": "Count total players",
+          "platform": "${platform_mysql_local}",
+          "action": "DB_MYSQL_OPERATION",
+          "operation": "SQL",
+          "database": "flowk_db",
+          "command": "SELECT COUNT(*) AS total_players FROM football_players"
+        },
+        {
+          "id": "query.team_summary",
+          "description": "Players grouped by team",
+          "platform": "${platform_mysql_local}",
+          "action": "DB_MYSQL_OPERATION",
+          "operation": "SQL",
+          "database": "flowk_db",
+          "command": "SELECT team, COUNT(*) AS players FROM football_players GROUP BY team ORDER BY players DESC, team"
+        },
+        {
+          "id": "query.goal_sum",
+          "description": "Sum of all goals",
+          "platform": "${platform_mysql_local}",
+          "action": "DB_MYSQL_OPERATION",
+          "operation": "SQL",
+          "database": "flowk_db",
+          "command": "SELECT SUM(goals) AS total_goals FROM football_players"
+        }
+      ]
+    },
+    {
+      "id": "evaluate.futbol_expected",
+      "description": "Check that queries return the expected football data",
+      "action": "EVALUATE",
+      "if_conditions": [
+        {
+          "left": "${from.task:parallel.futbol_queries.result$['query.player_count'].result[0].total_players}",
+          "operation": "=",
+          "right": "${expected_player_count}"
+        },
+        {
+          "left": "${from.task:parallel.futbol_queries.result$['query.team_summary'].result[*].team}",
+          "operation": "CONTAINS",
+          "right": "${expected_team}"
+        }
+      ],
+      "then": {
+        "continue": "Football data loaded from CSV matches the expected values"
+      },
+      "else": {
+        "exit": "Football data loaded from CSV does not match the expected values"
+      }
+    }
+  ]
+}

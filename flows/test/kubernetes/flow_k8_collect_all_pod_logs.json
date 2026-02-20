@@ -1,0 +1,25 @@
+{
+  "id": "flow_k8_collect_all_pod_logs",
+  "description": "Collect logs from every running pod in the target namespace.",
+  "tasks": [
+    {
+      "id": "list_running_pods",
+      "description": "List all pods currently running in the namespace to build the target list.",
+      "action": "KUBERNETES",
+      "operation": "GET_PODS",
+      "context": "docker-desktop",
+      "namespace": "apps"
+    },
+    {
+      "id": "fetch_logs_for_all_pods",
+      "description": "Fetch logs for the first pod discovered in the previous task.",
+      "action": "KUBERNETES",
+      "operation": "GET_LOGS",
+      "context": "docker-desktop",
+      "namespace": "apps",
+      "pod": [
+        "${from.task:list_running_pods.result$[0].name}"
+      ]
+    }
+  ]
+}

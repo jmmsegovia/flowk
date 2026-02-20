@@ -1,0 +1,603 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/flowk/values.schema.json",
+  "title": "FlowK definition schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "description",
+    "tasks"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "imports": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "on_error_flow": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Flow ID to execute when any task fails"
+    },
+    "finally_flow": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Flow ID to execute after the main flow finishes (runs regardless of success or failure)"
+    },
+    "finally_task": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Task ID to execute after the main flow finishes (runs regardless of success or failure)"
+    },
+    "tasks": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "$ref": "#/definitions/task"
+      }
+    }
+  },
+  "definitions": {
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "action"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional description for the task."
+        },
+        "action": {
+          "type": "string",
+          "minLength": 1
+        },
+        "platform": {
+          "type": "string",
+          "minLength": 1
+        },
+        "operation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "context": {
+          "type": "string",
+          "minLength": 1
+        },
+        "namespace": {
+          "type": "string",
+          "minLength": 1
+        },
+        "container": {
+          "type": "string",
+          "minLength": 1
+        },
+        "detach": {
+          "type": "boolean"
+        },
+        "remove_existing": {
+          "type": "boolean"
+        },
+        "since_time": {
+          "type": "string",
+          "minLength": 1
+        },
+        "since_pod_start": {
+          "type": "boolean"
+        },
+        "service": {
+          "type": "string",
+          "minLength": 1
+        },
+        "list": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "target": {
+              "type": "string",
+              "minLength": 1
+            },
+            "recursive": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "target"
+          ]
+        },
+        "local_port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "service_port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "skip_tables": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "deployments": {
+          "anyOf": [
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            {
+              "type": "string",
+              "minLength": 1
+            }
+          ]
+        },
+        "pod": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "replicas": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "require_break": {
+          "type": "boolean"
+        },
+        "kubeconfig": {
+          "type": "string",
+          "minLength": 1
+        },
+        "keyspace": {
+          "type": "string",
+          "minLength": 1
+        },
+        "command": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          ]
+        },
+        "seconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "max_wait_seconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "poll_interval_seconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "protocol": {
+          "type": "string",
+          "enum": [
+            "HTTP",
+            "HTTPS"
+          ]
+        },
+        "method": {
+          "type": "string",
+          "enum": [
+            "GET",
+            "POST",
+            "PUT",
+            "DELETE"
+          ]
+        },
+        "url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "body": {
+          "type": "string"
+        },
+        "body_file": {
+          "type": "string",
+          "minLength": 1
+        },
+        "bodyFile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cacert": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cert": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cert_password": {
+          "type": "string"
+        },
+        "certPassword": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "user": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "entries": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "message": {
+                "type": "string"
+              },
+              "variable": {
+                "type": "string",
+                "minLength": 1
+              },
+              "taskId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "field": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^(\\{\\{\\s*from\\.task:[^{}]+\\s*\\}\\}|\\$\\{\\s*from\\.task:[^{}]+\\s*\\}|[^{}]+)$",
+                "description": "Reference another task result using the `${from.task:...}` syntax."
+              },
+              "value": {}
+            }
+          }
+        },
+        "scope": {
+          "enum": [
+            "flow"
+          ]
+        },
+        "overwrite": {
+          "type": "boolean"
+        },
+        "vars": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "enum": [
+                  "string",
+                  "number",
+                  "bool",
+                  "array",
+                  "object",
+                  "secret"
+                ]
+              },
+              "value": {},
+              "operation": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "operator": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "variable": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "operator",
+                  "variable"
+                ]
+              }
+            },
+            "required": [
+              "name",
+              "type"
+            ],
+            "oneOf": [
+              {
+                "required": [
+                  "value"
+                ],
+                "not": {
+                  "required": [
+                    "operation"
+                  ]
+                }
+              },
+              {
+                "required": [
+                  "operation"
+                ],
+                "not": {
+                  "required": [
+                    "value"
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "if_conditions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "left": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^(\\{\\{\\s*from\\.task:[^{}]+\\s*\\}\\}|\\$\\{\\s*from\\.task:[^{}]+\\s*\\}|\\$\\{\\s*[A-Za-z0-9_.-]+\\s*\\}|\\{\\{\\s*[A-Za-z0-9_.-]+\\s*\\}\\}|[^{}]+)$",
+                "description": "Left operand to evaluate. Must reference a task or variable using `${from.task:...}` or `${variable}` placeholders, or be a literal value."
+              },
+              "operation": {
+                "type": "string",
+                "enum": [
+                  "=",
+                  "!=",
+                  ">",
+                  "<",
+                  ">=",
+                  "<=",
+                  "STARTS_WITH",
+                  "ENDS_WITH",
+                  "CONTAINS",
+                  "NOT_CONTAINS",
+                  "MATCHES",
+                  "IN",
+                  "NOT_IN"
+                ]
+              },
+              "right": {
+                "description": "Right operand for the comparison. Strings may contain `${from.task:...}` or `${variable}` placeholders; other JSON types are also accepted.",
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^(\\{\\{\\s*from\\.task:[^{}]+\\s*\\}\\}|\\$\\{\\s*from\\.task:[^{}]+\\s*\\}|\\$\\{\\s*[A-Za-z0-9_.-]+\\s*\\}|\\{\\{\\s*[A-Za-z0-9_.-]+\\s*\\}\\}|[^{}]*)$"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "array"
+                  },
+                  {
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "field": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^(\\{\\{\\s*from\\.task:[^{}]+\\s*\\}\\}|\\$\\{\\s*from\\.task:[^{}]+\\s*\\}|\\$\\{\\s*[A-Za-z0-9_.-]+\\s*\\}|\\{\\{\\s*[A-Za-z0-9_.-]+\\s*\\}\\})$",
+                "description": "Deprecated alias for `left`. Use placeholders when referencing tasks or variables."
+              },
+              "expected": {
+                "description": "Deprecated alias for `right`. Use `right` for new flows."
+              }
+            },
+            "anyOf": [
+              {
+                "required": [
+                  "left",
+                  "operation",
+                  "right"
+                ]
+              },
+              {
+                "required": [
+                  "field",
+                  "operation",
+                  "expected"
+                ]
+              }
+            ]
+          }
+        },
+        "then": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "continue": {
+              "type": "string"
+            },
+            "sleep": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "gototask": {
+              "type": "string",
+              "minLength": 1
+            },
+            "gototaskid": {
+              "type": "string",
+              "minLength": 1
+            },
+            "exit": {
+              "type": "string"
+            },
+            "break": {
+              "type": "string"
+            }
+          }
+        },
+        "else": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "continue": {
+              "type": "string"
+            },
+            "sleep": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "gototask": {
+              "type": "string",
+              "minLength": 1
+            },
+            "gototaskid": {
+              "type": "string",
+              "minLength": 1
+            },
+            "exit": {
+              "type": "string"
+            },
+            "break": {
+              "type": "string"
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "timeoutSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "insecure_skip_verify": {
+          "type": "boolean"
+        },
+        "insecureSkipVerify": {
+          "type": "boolean"
+        },
+        "accepted_status_codes": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 599
+          }
+        },
+        "tasks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/task"
+          }
+        },
+        "fail_fast": {
+          "type": "boolean"
+        },
+        "merge_strategy": {
+          "type": "string",
+          "enum": [
+            "last_write_wins",
+            "fail_on_conflict"
+          ]
+        },
+        "merge_order": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "PRINT"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "required": [
+              "entries"
+            ],
+            "properties": {
+              "description": {
+                "description": "Optional field. Provide a description only when you need additional task context."
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "GCLOUD_STORAGE"
+              },
+              "operation": {
+                "const": "LS"
+              }
+            },
+            "required": [
+              "action",
+              "operation"
+            ]
+          },
+          "then": {
+            "required": [
+              "list"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

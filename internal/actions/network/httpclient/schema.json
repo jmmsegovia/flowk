@@ -1,0 +1,65 @@
+{
+  "definitions": {
+    "task": {
+      "properties": {
+        "action": {
+          "enum": ["HTTP_REQUEST"]
+        },
+        "protocol": {
+          "type": "string",
+          "enum": ["HTTP", "HTTPS"],
+          "description": "Protocol to use (HTTP or HTTPS)."
+        },
+        "method": {
+          "type": "string",
+          "enum": ["GET", "POST", "PUT", "DELETE"],
+          "description": "HTTP method."
+        },
+        "url": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Request URL. Must include a host. You may provide a full URL with scheme (e.g. https://api.example.com/path) or omit the scheme but keep the host by prefixing with // (e.g. //api.example.com/path). Plain paths like api.example.com/path are parsed as a path and will fail validation."
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Optional HTTP headers."
+        },
+        "body": {
+          "type": "string",
+          "description": "Optional request body."
+        },
+        "body_file": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional path to a file containing the request body."
+        },
+        "description": {
+          "type": "string",
+          "description": "Task description"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "HTTP_REQUEST"
+              }
+            },
+            "required": ["action"]
+          },
+          "then": {
+            "required": [
+              "id",
+              "action",
+              "protocol",
+              "method",
+              "url"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

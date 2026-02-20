@@ -1,0 +1,30 @@
+name: Bug report
+description: Report a reproducible defect
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      placeholder: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: Exact flow JSON and command
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: FlowK version
+      placeholder: output of `flowk version`
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: OS + architecture

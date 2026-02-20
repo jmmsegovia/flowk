@@ -1,0 +1,101 @@
+{
+  "id": "dev_flow_cassandra_redacted",
+  "description": "Cassandra validation flow",
+  "imports": [
+    "./subflows/docker_cassandra_local.json"
+  ],
+  "tasks": [
+    {
+      "id": "vars.cassandra_inventory",
+      "description": "Declare Cassandra inventory configurations",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "platform_all_us-south1",
+          "type": "object",
+          "value": {
+            "cassandra": {
+              "cluster": "localhost",
+              "port": "9042",
+              "keyspaces": [
+                {
+                  "name": "alpha_dev10_mgr",
+                  "user": "cassandra",
+                  "password": "cassandra"
+                },
+                {
+                  "name": "alpha_dev10_disp",
+                  "user": "cassandra",
+                  "password": "cassandra"
+                },
+                {
+                  "name": "alpha_dev10_keymgr",
+                  "user": "cassandra",
+                  "password": "cassandra"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "platform_europe-north1",
+          "type": "object",
+          "value": {
+            "cassandra": {
+              "cluster": "localhost",
+              "port": "9042",
+              "keyspaces": [
+                {
+                  "name": "alpha_dev10_disp",
+                  "user": "cassandra",
+                  "password": "cassandra"
+                },
+                {
+                  "name": "alpha_dev10_keymgr",
+                  "user": "cassandra",
+                  "password": "cassandra"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "check_connection_all_us-south1",
+      "description": "Check connection for all_us-south1.",
+      "platform": "${platform_all_us-south1}",
+      "action": "DB_CASSANDRA_OPERATION",
+      "operation": "CHECK_CONNECTION"
+    },
+    {
+      "id": "check_connection_europe-north1",
+      "description": "Check connection for _europe-north1.",
+      "platform": "${platform_europe-north1}",
+      "action": "DB_CASSANDRA_OPERATION",
+      "operation": "CHECK_CONNECTION"
+    },
+    {
+      "id": "list_all_objects_all_us-south1",
+      "description": "List all Cassandra objects in all_us-south1",
+      "platform": "${platform_all_us-south1}",
+      "action": "DB_CASSANDRA_OPERATION",
+      "operation": "LIST_ALL_OBJECTS"
+    },
+    {
+      "id": "list_all_objects_europe-north1",
+      "description": "List all Cassandra objects in _europe-north1",
+      "platform": "${platform_europe-north1}",
+      "action": "DB_CASSANDRA_OPERATION",
+      "operation": "LIST_ALL_OBJECTS"
+    },
+    {
+      "id": "wait_before_next_ops",
+      "description": "Wait before next operations",
+      "action": "SLEEP",
+      "seconds": 1
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "id": "example_nested_subflows",
+  "description": "Rollback scenario that demonstrates nested subflow imports.",
+  "imports": [
+    "./subflows/database_seed.json",
+    "./subflows/cleanup_pipeline.json"
+  ],
+  "tasks": [
+    {
+      "id": "print-rollback-start",
+      "description": "Announce the start of the rollback sequence.",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "rollback",
+          "value": "Rollback initiated"
+        }
+      ]
+    },
+    {
+      "id": "sleep-for-operators",
+      "description": "Pause to allow operators to monitor the rollback progress.",
+      "action": "SLEEP",
+      "seconds": 15
+    }
+  ]
+}

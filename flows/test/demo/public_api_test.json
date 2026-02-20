@@ -1,0 +1,41 @@
+{
+  "id": "public_api_test_fixed",
+  "description": "Connectivity test against JSONPlaceholder (Validated).",
+  "tasks": [
+    {
+      "id": "setup_config",
+      "action": "VARIABLES",
+      "description": "Configure the users endpoint",
+      "vars": [
+        {
+          "name": "host",
+          "type": "string",
+          "value": "https://jsonplaceholder.typicode.com"
+        },
+        {
+          "name": "user_id",
+          "type": "string",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "id": "get_user_data",
+      "action": "HTTP_REQUEST",
+      "description": "Fetches data for user 1",
+      "protocol": "HTTPS",
+      "method": "GET",
+      "url": "${host}/users/${user_id}"
+    },
+    {
+      "id": "print_confirmation",
+      "action": "PRINT",
+      "description": "Confirms that the request was sent",
+      "entries": [
+        {
+          "message": "Request sent to ${host} for user ${user_id}"
+        }
+      ]
+    }
+  ]
+}

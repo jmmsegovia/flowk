@@ -1,0 +1,32 @@
+{
+  "id": "refresh_access_token_sf",
+  "description": "Refresh access token from refresh token",
+  "tasks": [
+    {
+      "id": "refresh_access_token",
+      "action": "HTTP_REQUEST",
+      "protocol": "HTTPS",
+      "method": "POST",
+      "url": "https://oauth2.googleapis.com/token",
+      "headers": {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      "body": "grant_type=refresh_token&client_id=${google_client_id}&client_secret=${google_client_secret}&refresh_token=${gmail_refresh_token}",
+      "accepted_status_codes": [200]
+    },
+    {
+      "id": "set_access_token",
+      "description": "Store access token from refresh",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "gmail_access_token",
+          "type": "secret",
+          "value": "${from.task:refresh_access_token.result$.response.body.access_token}"
+        }
+      ]
+    }
+  ]
+}

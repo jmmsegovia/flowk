@@ -1,0 +1,22 @@
+{
+  "id": "build_authorize_url_sf",
+  "description": "Build OAuth2 authorization URL",
+  "tasks": [
+    {
+      "id": "build_authorize_url",
+      "action": "OAUTH2",
+      "operation": "AUTHORIZE_URL",
+      "auth_url": "https://accounts.google.com/o/oauth2/v2/auth",
+      "client_id": "${google_client_id}",
+      "redirect_uri": "http://localhost",
+      "scopes": [
+        "https://www.googleapis.com/auth/gmail.send"
+      ],
+      "state": "flowk-gmail-demo",
+      "extra_params": {
+        "access_type": "offline",
+        "prompt": "consent"
+      }
+    }
+  ]
+}

@@ -1,0 +1,338 @@
+{
+  "definitions": {
+    "task": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "enum": ["OAUTH2"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Task description"
+        },
+        "operation": {
+          "type": "string",
+          "description": "OAuth 2.0 operation to execute"
+        },
+        "auth_url": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Authorization endpoint URL used to generate an end-user authorize URL"
+        },
+        "token_url": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Token endpoint URL"
+        },
+        "device_url": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Device authorization endpoint URL"
+        },
+        "introspect_url": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Token introspection endpoint URL"
+        },
+        "revoke_url": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Token revocation endpoint URL"
+        },
+        "client_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "OAuth client identifier"
+        },
+        "client_secret": {
+          "type": "string",
+          "description": "OAuth client secret (redacted in logs and results)"
+        },
+        "redirect_uri": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Redirect URI configured in the OAuth provider"
+        },
+        "scopes": {
+          "description": "OAuth scopes as a space-delimited string or an array of strings",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "state": {
+          "type": "string",
+          "description": "Optional OAuth state value for CSRF mitigation"
+        },
+        "audience": {
+          "type": "string",
+          "description": "Optional OAuth audience parameter"
+        },
+        "resource": {
+          "type": "string",
+          "description": "Optional OAuth resource parameter"
+        },
+        "code": {
+          "type": "string",
+          "description": "Authorization code to exchange"
+        },
+        "refresh_token": {
+          "type": "string",
+          "description": "Refresh token value"
+        },
+        "device_code": {
+          "type": "string",
+          "description": "Device code used by the device token flow"
+        },
+        "username": {
+          "type": "string",
+          "description": "Resource owner username (legacy password flow)"
+        },
+        "password": {
+          "type": "string",
+          "description": "Resource owner password (legacy password flow; redacted in logs and results)"
+        },
+        "token": {
+          "type": "string",
+          "description": "Token used for introspection or revocation"
+        },
+        "extra_params": {
+          "type": "object",
+          "description": "Additional form/query params forwarded to the provider",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "headers": {
+          "type": "object",
+          "description": "Additional HTTP headers for token/introspection/revocation requests",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "pkce": {
+          "type": "object",
+          "description": "PKCE settings used by AUTHORIZE_URL and EXCHANGE_CODE operations",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable PKCE"
+            },
+            "verifier": {
+              "type": "string",
+              "description": "PKCE verifier (required when pkce.enabled is true)"
+            },
+            "challenge": {
+              "type": "string",
+              "description": "Optional PKCE challenge. If omitted, it is derived from verifier"
+            },
+            "challenge_method": {
+              "type": "string",
+              "enum": ["S256", "plain"],
+              "description": "PKCE challenge method"
+            }
+          }
+        },
+        "timeoutSeconds": {
+          "type": "number",
+          "minimum": 0,
+          "description": "HTTP client timeout in seconds"
+        },
+        "insecureSkipVerify": {
+          "type": "boolean",
+          "description": "Skip TLS certificate verification for HTTPS endpoints"
+        },
+        "expected_status_codes": {
+          "type": "array",
+          "description": "Accepted HTTP status codes (defaults to [200])",
+          "items": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 599
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "OAUTH2"
+              }
+            },
+            "required": ["action"]
+          },
+          "then": {
+            "required": ["id", "action", "operation"],
+            "properties": {
+              "operation": {
+                "enum": [
+                  "AUTHORIZE_URL",
+                  "EXCHANGE_CODE",
+                  "REFRESH_TOKEN",
+                  "DEVICE_CODE",
+                  "DEVICE_TOKEN",
+                  "CLIENT_CREDENTIALS",
+                  "PASSWORD",
+                  "INTROSPECT",
+                  "REVOKE"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "OAUTH2"
+              },
+              "operation": {
+                "const": "AUTHORIZE_URL"
+              }
+            },
+            "required": ["action", "operation"]
+          },
+          "then": {
+            "required": ["id", "action", "operation", "auth_url", "client_id", "redirect_uri", "scopes"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "OAUTH2"
+              },
+              "operation": {
+                "const": "EXCHANGE_CODE"
+              }
+            },
+            "required": ["action", "operation"]
+          },
+          "then": {
+            "required": ["id", "action", "operation", "token_url", "client_id", "redirect_uri", "code"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "OAUTH2"
+              },
+              "operation": {
+                "const": "REFRESH_TOKEN"
+              }
+            },
+            "required": ["action", "operation"]
+          },
+          "then": {
+            "required": ["id", "action", "operation", "token_url", "client_id", "refresh_token"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "OAUTH2"
+              },
+              "operation": {
+                "const": "DEVICE_CODE"
+              }
+            },
+            "required": ["action", "operation"]
+          },
+          "then": {
+            "required": ["id", "action", "operation", "device_url", "client_id", "scopes"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "OAUTH2"
+              },
+              "operation": {
+                "const": "DEVICE_TOKEN"
+              }
+            },
+            "required": ["action", "operation"]
+          },
+          "then": {
+            "required": ["id", "action", "operation", "token_url", "client_id", "device_code"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "OAUTH2"
+              },
+              "operation": {
+                "const": "CLIENT_CREDENTIALS"
+              }
+            },
+            "required": ["action", "operation"]
+          },
+          "then": {
+            "required": ["id", "action", "operation", "token_url", "client_id", "client_secret"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "OAUTH2"
+              },
+              "operation": {
+                "const": "PASSWORD"
+              }
+            },
+            "required": ["action", "operation"]
+          },
+          "then": {
+            "required": ["id", "action", "operation", "token_url", "client_id", "username", "password"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "OAUTH2"
+              },
+              "operation": {
+                "const": "INTROSPECT"
+              }
+            },
+            "required": ["action", "operation"]
+          },
+          "then": {
+            "required": ["id", "action", "operation", "introspect_url", "token"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "OAUTH2"
+              },
+              "operation": {
+                "const": "REVOKE"
+              }
+            },
+            "required": ["action", "operation"]
+          },
+          "then": {
+            "required": ["id", "action", "operation", "revoke_url", "token"]
+          }
+        }
+      ]
+    }
+  }
+}

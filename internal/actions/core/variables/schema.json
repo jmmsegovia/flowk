@@ -1,0 +1,74 @@
+{
+  "definitions": {
+    "task": {
+      "properties": {
+        "action": {
+          "enum": ["VARIABLES"]
+        },
+        "vars": {
+          "type": "array",
+          "description": "Variables to define. Each entry includes name, type, and either value or operation.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Variable name."
+              },
+              "type": {
+                "type": "string",
+                "enum": ["string", "number", "bool", "array", "object", "secret"],
+                "description": "Variable value type."
+              },
+              "value": {
+                "description": "Literal value to assign."
+              },
+              "operation": {
+                "type": "object",
+                "description": "Derived value based on another variable.",
+                "additionalProperties": false,
+                "properties": {
+                  "operator": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "variable": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": ["operator", "variable"]
+              }
+            },
+            "required": ["name", "type"],
+            "description": "Each entry must include either value or operation (but not both)."
+          }
+        },
+        "description": {
+          "type": "string",
+          "description": "Task description"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "VARIABLES"
+              }
+            },
+            "required": ["action"]
+          },
+          "then": {
+            "required": [
+              "id",
+              "action",
+              "vars"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

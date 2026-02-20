@@ -1,0 +1,35 @@
+{
+  "id": "docker_ssh_local_setup",
+  "description": "Start a local SSH server container for SSH/SFTP flows.",
+  "tasks": [
+    {
+      "id": "docker.pull.alpine.ssh",
+      "action": "DOCKER",
+      "operation": "IMAGE_PULL",
+      "image": "alpine:3.19"
+    },
+    {
+      "id": "docker.run.sshd",
+      "action": "DOCKER",
+      "operation": "CONTAINER_RUN",
+      "image": "alpine:3.19",
+      "name": "flowk-ssh",
+      "detach": true,
+      "remove_existing": true,
+      "ports": [
+        "2222:2222"
+      ],
+      "command": [
+        "sh",
+        "-lc",
+        "apk add --no-cache openssh-server >/dev/null && mkdir -p /var/run/sshd && ssh-keygen -A >/dev/null && echo 'root:flowkpass' | chpasswd && printf '\\nPermitRootLogin yes\\nPasswordAuthentication yes\\nSubsystem sftp internal-sftp\\n' >> /etc/ssh/sshd_config && /usr/sbin/sshd -D -p 2222"
+      ]
+    },
+    {
+      "id": "sleep.sshd_boot",
+      "description": "Wait for the SSH server to accept connections.",
+      "action": "SLEEP",
+      "seconds": 3
+    }
+  ]
+}

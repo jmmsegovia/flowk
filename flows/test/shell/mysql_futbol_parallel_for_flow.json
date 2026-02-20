@@ -1,0 +1,285 @@
+{
+  "id": "mysql_futbol_parallel_for_flow",
+  "description": "MySQL flow with FOR, PARALLEL, and EVALUATE using football data (Docker included)",
+  "tasks": [
+    {
+      "id": "vars.mysql_futbol",
+      "description": "Declare MySQL platform configuration and expected values",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "platform_mysql_local",
+          "type": "object",
+          "value": {
+            "name": "local_mysql",
+            "mysql": {
+              "host": "127.0.0.1",
+              "port": "3307",
+              "databases": [
+                {
+                  "name": "flowk_db",
+                  "user": "flowk",
+                  "password": "flowk"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "mysql_container_name",
+          "type": "string",
+          "value": "flowk-mysql"
+        },
+        {
+          "name": "mysql_image",
+          "type": "string",
+          "value": "mysql:8.0"
+        },
+        {
+          "name": "mysql_port",
+          "type": "string",
+          "value": "3307"
+        },
+        {
+          "name": "mysql_root_password",
+          "type": "string",
+          "value": "flowk"
+        },
+        {
+          "name": "mysql_user",
+          "type": "string",
+          "value": "flowk"
+        },
+        {
+          "name": "mysql_password",
+          "type": "string",
+          "value": "flowk"
+        },
+        {
+          "name": "mysql_database",
+          "type": "string",
+          "value": "flowk_db"
+        },
+        {
+          "name": "expected_player_count",
+          "type": "number",
+          "value": 4
+        },
+        {
+          "name": "expected_team",
+          "type": "string",
+          "value": "FC Barcelona"
+        }
+      ]
+    },
+    {
+      "id": "shell.docker.pull.mysql",
+      "description": "Pull MySQL Docker image",
+      "action": "SHELL",
+      "command": [
+        "set -euo pipefail",
+        "docker pull ${mysql_image}"
+      ],
+      "shell": {
+        "program": "/bin/bash",
+        "args": [
+          "-lc"
+        ]
+      }
+    },
+    {
+      "id": "shell.docker.run.mysql",
+      "description": "Run MySQL container",
+      "action": "SHELL",
+      "command": [
+        "set -euo pipefail",
+        "docker rm -f ${mysql_container_name} >/dev/null 2>&1 || true",
+        "docker run -d --name ${mysql_container_name} \\",
+        "  -e MYSQL_ROOT_PASSWORD=${mysql_root_password} \\",
+        "  -e MYSQL_DATABASE=${mysql_database} \\",
+        "  -e MYSQL_USER=${mysql_user} \\",
+        "  -e MYSQL_PASSWORD=${mysql_password} \\",
+        "  -p ${mysql_port}:3306 \\",
+        "  ${mysql_image} --default-authentication-plugin=mysql_native_password"
+      ],
+      "shell": {
+        "program": "/bin/bash",
+        "args": [
+          "-lc"
+        ]
+      }
+    },
+    {
+      "id": "shell.docker.wait.mysql",
+      "description": "Wait for MySQL to accept connections",
+      "action": "SHELL",
+      "command": [
+        "set -euo pipefail",
+        "until docker exec ${mysql_container_name} mysqladmin ping -h 127.0.0.1 -uroot -p${mysql_root_password} --silent; do",
+        "  sleep 1",
+        "done"
+      ],
+      "shell": {
+        "program": "/bin/bash",
+        "args": [
+          "-lc"
+        ]
+      },
+      "timeoutSeconds": 60
+    },
+    {
+      "id": "check_connection_mysql",
+      "description": "Check connection to MySQL",
+      "platform": "${platform_mysql_local}",
+      "action": "DB_MYSQL_OPERATION",
+      "operation": "CHECK_CONNECTION"
+    },
+    {
+      "id": "create_players_table_mysql",
+      "description": "Create football players table",
+      "platform": "${platform_mysql_local}",
+      "action": "DB_MYSQL_OPERATION",
+      "operation": "SQL",
+      "database": "flowk_db",
+      "command": "CREATE TABLE IF NOT EXISTS football_players (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255) NOT NULL, team VARCHAR(255) NOT NULL, position VARCHAR(10) NOT NULL, goals INT NOT NULL)"
+    },
+    {
+      "id": "truncate_players_table_mysql",
+      "description": "Ensure the table starts empty",
+      "platform": "${platform_mysql_local}",
+      "action": "DB_MYSQL_OPERATION",
+      "operation": "SQL",
+      "database": "flowk_db",
+      "command": "TRUNCATE TABLE football_players"
+    },
+    {
+      "id": "for.insert_players",
+      "description": "Insert football players with FOR",
+      "action": "FOR",
+      "variable": "player_row",
+      "values": [
+        "Lionel Messi|Inter Miami|FW|10",
+        "Alexia Putellas|FC Barcelona|MF|8",
+        "Kylian Mbappe|Real Madrid|FW|12",
+        "Aitana Bonmati|FC Barcelona|MF|9"
+      ],
+      "tasks": [
+        {
+          "id": "insert_player_mysql",
+          "description": "Insert one football player",
+          "platform": "${platform_mysql_local}",
+          "action": "DB_MYSQL_OPERATION",
+          "operation": "SQL",
+          "database": "flowk_db",
+          "command": "INSERT INTO football_players (name, team, position, goals) VALUES (SUBSTRING_INDEX('${player_row}', '|', 1), SUBSTRING_INDEX(SUBSTRING_INDEX('${player_row}', '|', 2), '|', -1), SUBSTRING_INDEX(SUBSTRING_INDEX('${player_row}', '|', 3), '|', -1), CAST(SUBSTRING_INDEX('${player_row}', '|', -1) AS UNSIGNED))"
+        }
+      ]
+    },
+    {
+      "id": "parallel.futbol_queries",
+      "description": "Run football queries in parallel",
+      "action": "PARALLEL",
+      "fail_fast": false,
+      "merge_strategy": "last_write_wins",
+      "merge_order": [
+        "query.player_count",
+        "query.team_summary",
+        "query.goal_sum"
+      ],
+      "tasks": [
+        {
+          "id": "query.player_count",
+          "description": "Count total players",
+          "platform": "${platform_mysql_local}",
+          "action": "DB_MYSQL_OPERATION",
+          "operation": "SQL",
+          "database": "flowk_db",
+          "command": "SELECT COUNT(*) AS total_players FROM football_players"
+        },
+        {
+          "id": "query.team_summary",
+          "description": "Players grouped by team",
+          "platform": "${platform_mysql_local}",
+          "action": "DB_MYSQL_OPERATION",
+          "operation": "SQL",
+          "database": "flowk_db",
+          "command": "SELECT team, COUNT(*) AS players FROM football_players GROUP BY team ORDER BY players DESC, team"
+        },
+        {
+          "id": "query.goal_sum",
+          "description": "Sum of all goals",
+          "platform": "${platform_mysql_local}",
+          "action": "DB_MYSQL_OPERATION",
+          "operation": "SQL",
+          "database": "flowk_db",
+          "command": "SELECT SUM(goals) AS total_goals FROM football_players"
+        }
+      ]
+    },
+    {
+      "id": "evaluate.futbol_expected",
+      "description": "Check that queries return the expected football data",
+      "action": "EVALUATE",
+      "if_conditions": [
+        {
+          "left": "${from.task:parallel.futbol_queries.result$['query.player_count'].result[0].total_players}",
+          "operation": "=",
+          "right": "${expected_player_count}"
+        },
+        {
+          "left": "${from.task:parallel.futbol_queries.result$['query.team_summary'].result[*].team}",
+          "operation": "CONTAINS",
+          "right": "${expected_team}"
+        }
+      ],
+      "then": {
+        "continue": "Football data matches the expected values"
+      },
+      "else": {
+        "exit": "Football data does not match the expected values"
+      }
+    },
+    {
+      "id": "truncate_all_tables_mysql",
+      "description": "Truncate all tables in flowk_db",
+      "platform": "${platform_mysql_local}",
+      "action": "DB_MYSQL_OPERATION",
+      "operation": "TRUNCATE_ALL_TABLES",
+      "database": "flowk_db"
+    },
+    {
+      "id": "shell.docker.remove.mysql",
+      "description": "Remove MySQL container",
+      "action": "SHELL",
+      "command": [
+        "set -euo pipefail",
+        "docker rm -f ${mysql_container_name}"
+      ],
+      "shell": {
+        "program": "/bin/bash",
+        "args": [
+          "-lc"
+        ]
+      },
+      "continueOnError": true
+    },
+    {
+      "id": "shell.docker.rmi.mysql",
+      "description": "Remove MySQL Docker image",
+      "action": "SHELL",
+      "command": [
+        "set -euo pipefail",
+        "docker rmi ${mysql_image}"
+      ],
+      "shell": {
+        "program": "/bin/bash",
+        "args": [
+          "-lc"
+        ]
+      },
+      "continueOnError": true
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "subflows.k8_helm_repos",
+  "description": "Configure Helm repositories required by the CI/CD flow.",
+  "tasks": [
+    {
+      "id": "helm.repo_add_bitnami",
+      "action": "HELM",
+      "description": "Register the Bitnami Helm repository.",
+      "operation": "REPO_ADD",
+      "repository_name": "${helm_repo_name}",
+      "repository_url": "https://charts.bitnami.com/bitnami"
+    },
+    {
+      "id": "helm.repo_update",
+      "action": "HELM",
+      "description": "Refresh Helm repositories.",
+      "operation": "REPO_UPDATE"
+    }
+  ]
+}

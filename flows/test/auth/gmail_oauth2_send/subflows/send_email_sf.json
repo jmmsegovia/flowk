@@ -1,0 +1,19 @@
+{
+  "id": "send_email_sf",
+  "description": "Send Gmail message",
+  "tasks": [
+    {
+      "id": "send_email",
+      "action": "HTTP_REQUEST",
+      "protocol": "HTTPS",
+      "method": "POST",
+      "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+      "headers": {
+        "Authorization": "Bearer ${gmail_access_token}",
+        "Content-Type": "application/json"
+      },
+      "body": "{\"raw\":\"${gmail_message_raw_base64url}\"}",
+      "accepted_status_codes": [200]
+    }
+  ]
+}

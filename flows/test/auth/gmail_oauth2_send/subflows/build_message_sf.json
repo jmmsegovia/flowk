@@ -1,0 +1,47 @@
+{
+  "id": "build_message_sf",
+  "description": "Build RFC822 message and store base64url",
+  "tasks": [
+    {
+      "id": "set_gmail_message_vars",
+      "description": "Set Gmail message fields",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "gmail_subject",
+          "type": "string",
+          "value": "FlowK Test"
+        },
+        {
+          "name": "gmail_body",
+          "type": "string",
+          "value": "Hello, this is a test email sent with FlowK !!"
+        }
+      ]
+    },
+    {
+      "id": "build_gmail_message_base64url",
+      "description": "Build RFC822 message and base64url encode it",
+      "action": "BASE64",
+      "operation": "ENCODE",
+      "input": "From: ${gmail_from}\nTo: ${gmail_to}\nSubject: ${gmail_subject}\n\n${gmail_body}\n",
+      "urlSafe": true
+    },
+    {
+      "id": "set_gmail_message_raw",
+      "description": "Store base64url encoded message",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "gmail_message_raw_base64url",
+          "type": "string",
+          "value": "${from.task:build_gmail_message_base64url.result$.stdout}"
+        }
+      ]
+    }
+  ]
+}

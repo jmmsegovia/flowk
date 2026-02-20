@@ -1,0 +1,34 @@
+{
+  "definitions": {
+    "task": {
+      "properties": {
+        "action": {
+          "enum": ["SLEEP"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Task description"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "SLEEP"
+              }
+            },
+            "required": ["action"]
+          },
+          "then": {
+            "required": [
+              "id",
+              "action",
+              "seconds"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

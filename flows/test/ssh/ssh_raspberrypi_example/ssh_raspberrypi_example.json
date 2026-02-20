@@ -1,0 +1,49 @@
+{
+  "id": "ssh_raspberrypi_example",
+  "description": "Ejecuta comandos en una Raspberry Pi accesible por clave SSH",
+  "imports": [
+    "./subflows/docker_ssh_local.json"
+  ],
+  "tasks": [
+    {
+      "id": "ssh.raspberrypi.healthcheck",
+      "description": "Checks basic information about the remote system",
+      "action": "SSH",
+      "connection": {
+        "address": "127.0.0.1:2222",
+        "username": "root",
+        "auth": {
+          "method": "password",
+          "password": "flowkpass"
+        },
+        "hostKey": {
+          "mode": "insecure"
+        }
+      },
+      "steps": [
+        {
+          "id": "ssh.verify_identity",
+          "operation": "RUN_COMMAND_OUTPUT",
+          "commands": [
+            "whoami",
+            "hostname"
+          ]
+        },
+        {
+          "id": "ssh.check_uptime",
+          "operation": "RUN_COMMAND",
+          "commands": [
+            "uptime"
+          ]
+        },
+        {
+          "id": "ssh.disk_usage",
+          "operation": "RUN_COMMAND",
+          "commands": [
+            "df -h /"
+          ]
+        }
+      ]
+    }
+  ]
+}

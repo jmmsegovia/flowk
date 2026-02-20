@@ -1,0 +1,32 @@
+{
+  "id": "subflows.cleanup_pipeline",
+  "description": "Cleanup tasks executed during rollback scenarios.",
+  "tasks": [
+    {
+      "id": "scale-api-down",
+      "description": "Scale the API deployment back to a single replica during rollback.",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "Mock scale deployment",
+          "value": {
+            "deployment": "api",
+            "namespace": "shop",
+            "replicas": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "archive-deployment-logs",
+      "description": "Archive deployment logs for future analysis.",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "archive_path",
+          "value": "s3://deployments/logs/latest"
+        }
+      ]
+    }
+  ]
+}

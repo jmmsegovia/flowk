@@ -1,0 +1,76 @@
+{
+  "id": "subflows.k8s_observability_checks",
+  "description": "Capture Kubernetes deployment logs to pair infrastructure context with the Dog API insight report.",
+  "tasks": [
+    {
+      "id": "observability.print_prelude",
+      "description": "Signal the start of the Kubernetes log snapshot sequence.",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "Collecting logs from deployment",
+          "value": "hello"
+        },
+        {
+          "message": "Target namespace",
+          "value": "apps"
+        }
+      ]
+    },
+    {
+      "id": "observability.mock_logs",
+      "description": "Provide a deterministic log sample for environments without Kubernetes.",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "k8sLogs",
+          "type": "array",
+          "value": [
+            "hello deployment started",
+            "hello service responding on :80"
+          ]
+        },
+        {
+          "name": "k8sLogSample",
+          "type": "string",
+          "value": "hello deployment started"
+        }
+      ]
+    },
+    {
+      "id": "observability.verify_logs",
+      "description": "Verify the log retrieval succeeded before persisting the snippet for later reporting.",
+      "action": "EVALUATE",
+      "if_conditions": [
+        {
+          "left": "${k8sLogSample}",
+          "operation": "!=",
+          "right": ""
+        }
+      ],
+      "then": {
+        "continue": "Kubernetes logs captured successfully."
+      },
+      "else": {
+        "exit": "Failed to capture Kubernetes logs; stopping the pipeline."
+      }
+    },
+    {
+      "id": "observability.print_preview",
+      "description": "Expose a preview of the captured Kubernetes logs.",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "First log line",
+          "variable": "k8sLogSample"
+        },
+        {
+          "message": "Log sample variable",
+          "variable": "k8sLogSample"
+        }
+      ]
+    }
+  ]
+}

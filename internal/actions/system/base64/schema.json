@@ -1,0 +1,124 @@
+{
+  "definitions": {
+    "task": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "enum": ["BASE64"]
+        },
+        "operation": {
+          "type": "string",
+          "description": "Operation to execute: ENCODE uses Go's base64 encoder, DECODE uses the decoder."
+        },
+        "input": {
+          "type": "string",
+          "description": "Raw input string to encode or decode. Use this OR inputFile, not both."
+        },
+        "inputFile": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path to the input file consumed by the base64 encoder/decoder. Use this OR input, not both."
+        },
+        "outputFile": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional output file path. When provided, the action writes stdout content to this path as well."
+        },
+        "wrap": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4096,
+          "description": "Line wrapping width (encoding only). Set to 0 to disable wrapping; omit to default to 76."
+        },
+        "ignoreGarbage": {
+          "type": "boolean",
+          "description": "When true, non-base64 bytes are stripped before decoding."
+        },
+        "urlSafe": {
+          "type": "boolean",
+          "description": "When true, convert the encoded output to base64url (replace +/ with -_, strip padding, remove newlines)."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "BASE64"
+              }
+            },
+            "required": ["action"]
+          },
+          "then": {
+            "required": ["id", "action", "operation"],
+            "properties": {
+              "operation": {
+                "enum": ["ENCODE", "DECODE"]
+              }
+            },
+            "oneOf": [
+              {
+                "required": ["input"],
+                "not": {
+                  "required": ["inputFile"]
+                }
+              },
+              {
+                "required": ["inputFile"],
+                "not": {
+                  "required": ["input"]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "BASE64"
+              },
+              "operation": {
+                "const": "ENCODE"
+              }
+            },
+            "required": ["action", "operation"]
+          },
+          "then": {
+            "properties": {
+              "ignoreGarbage": {
+                "enum": [false]
+              },
+              "urlSafe": {
+                "enum": [true, false]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "BASE64"
+              },
+              "operation": {
+                "const": "DECODE"
+              }
+            },
+            "required": ["action", "operation"]
+          },
+          "then": {
+            "properties": {
+              "wrap": {
+                "type": "null"
+              },
+              "urlSafe": {
+                "enum": [false]
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

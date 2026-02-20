@@ -1,0 +1,60 @@
+{
+  "id": "subflows.k8_app_rollout",
+  "description": "Deploy the sample app and perform scale down/up operations.",
+  "tasks": [
+    {
+      "id": "helm.install_app",
+      "action": "HELM",
+      "description": "Install a sample app deployment to simulate CI/CD rollouts.",
+      "operation": "INSTALL",
+      "release_name": "${app_release}",
+      "chart": "${app_chart}",
+      "namespace": "${kube_namespace}",
+      "kube_context": "${kube_context}",
+      "create_namespace": true,
+      "wait": true,
+      "timeout_seconds": 180,
+      "set_values": [
+        "replicaCount=1",
+        "service.type=ClusterIP"
+      ]
+    },
+    {
+      "id": "k8.scale_app_down",
+      "description": "Scale the app deployment down to zero for a maintenance window.",
+      "action": "KUBERNETES",
+      "operation": "SCALE",
+      "context": "${kube_context}",
+      "namespace": "${kube_namespace}",
+      "deployments": [
+        "${app_deployment}"
+      ],
+      "replicas": 0
+    },
+    {
+      "id": "k8.scale_app_up",
+      "description": "Scale the app deployment back up after maintenance.",
+      "action": "KUBERNETES",
+      "operation": "SCALE",
+      "context": "${kube_context}",
+      "namespace": "${kube_namespace}",
+      "deployments": [
+        "${app_deployment}"
+      ],
+      "replicas": 1
+    },
+    {
+      "id": "k8.wait_app_ready",
+      "description": "Wait for the app pods to become ready again.",
+      "action": "KUBERNETES",
+      "operation": "WAIT_FOR_POD_READINESS",
+      "context": "${kube_context}",
+      "namespace": "${kube_namespace}",
+      "deployments": [
+        "${app_deployment}"
+      ],
+      "max_wait_seconds": 180,
+      "poll_interval_seconds": 5
+    }
+  ]
+}

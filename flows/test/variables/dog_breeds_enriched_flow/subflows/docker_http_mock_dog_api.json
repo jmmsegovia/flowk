@@ -1,0 +1,36 @@
+{
+  "id": "docker_http_mock_dog_api",
+  "description": "Run a local HTTP echo server that returns a Dog API-like payload.",
+  "tasks": [
+    {
+      "id": "docker.pull.http_echo.dog_api",
+      "action": "DOCKER",
+      "operation": "IMAGE_PULL",
+      "image": "hashicorp/http-echo:0.2.3"
+    },
+    {
+      "id": "docker.run.dog_api_mock",
+      "action": "DOCKER",
+      "operation": "CONTAINER_RUN",
+      "image": "hashicorp/http-echo:0.2.3",
+      "name": "flowk-dog-api-mock",
+      "detach": true,
+      "remove_existing": true,
+      "ports": [
+        "8091:8091"
+      ],
+      "command": [
+        "-listen",
+        ":8091",
+        "-text",
+        "{\"data\":[{\"id\":\"breed-1\",\"attributes\":{\"name\":\"Affenpinscher\",\"hypoallergenic\":true,\"life\":{\"min\":14,\"max\":16},\"male_weight\":{\"max\":25}},\"relationships\":{\"group\":{\"data\":{\"id\":\"8000793f-a1ae-4ec4-8d55-ef83f1f644e5\"}}}},{\"id\":\"breed-2\",\"attributes\":{\"name\":\"Beagle\",\"hypoallergenic\":false,\"life\":{\"min\":12,\"max\":15},\"male_weight\":{\"max\":22}},\"relationships\":{\"group\":{\"data\":{\"id\":\"group-2\"}}}},{\"id\":\"breed-3\",\"attributes\":{\"name\":\"Collie\",\"hypoallergenic\":false,\"life\":{\"min\":13,\"max\":14},\"male_weight\":{\"max\":27}},\"relationships\":{\"group\":{\"data\":{\"id\":\"group-3\"}}}},{\"id\":\"breed-4\",\"attributes\":{\"name\":\"Dachshund\",\"hypoallergenic\":false,\"life\":{\"min\":12,\"max\":16},\"male_weight\":{\"max\":20}},\"relationships\":{\"group\":{\"data\":{\"id\":\"group-4\"}}}},{\"id\":\"breed-5\",\"attributes\":{\"name\":\"Eskimo Dog\",\"hypoallergenic\":true,\"life\":{\"min\":14,\"max\":15},\"male_weight\":{\"max\":24}},\"relationships\":{\"group\":{\"data\":{\"id\":\"8000793f-a1ae-4ec4-8d55-ef83f1f644e5\"}}}},{\"id\":\"breed-6\",\"attributes\":{\"name\":\"Fox Terrier\",\"hypoallergenic\":false,\"life\":{\"min\":12,\"max\":15},\"male_weight\":{\"max\":18}},\"relationships\":{\"group\":{\"data\":{\"id\":\"group-5\"}}}},{\"id\":\"breed-7\",\"attributes\":{\"name\":\"Greyhound\",\"hypoallergenic\":false,\"life\":{\"min\":10,\"max\":13},\"male_weight\":{\"max\":30}},\"relationships\":{\"group\":{\"data\":{\"id\":\"group-6\"}}}},{\"id\":\"breed-8\",\"attributes\":{\"name\":\"Havanese\",\"hypoallergenic\":true,\"life\":{\"min\":14,\"max\":16},\"male_weight\":{\"max\":12}},\"relationships\":{\"group\":{\"data\":{\"id\":\"group-7\"}}}},{\"id\":\"breed-9\",\"attributes\":{\"name\":\"Irish Setter\",\"hypoallergenic\":false,\"life\":{\"min\":11,\"max\":14},\"male_weight\":{\"max\":29}},\"relationships\":{\"group\":{\"data\":{\"id\":\"group-8\"}}}},{\"id\":\"breed-10\",\"attributes\":{\"name\":\"Jindo\",\"hypoallergenic\":false,\"life\":{\"min\":12,\"max\":14},\"male_weight\":{\"max\":35}},\"relationships\":{\"group\":{\"data\":{\"id\":\"group-9\"}}}}],\"meta\":{\"pagination\":{\"current\":1,\"next\":2,\"last\":5}},\"links\":{\"self\":\"http://localhost:8091/breeds\"}}"
+      ]
+    },
+    {
+      "id": "sleep.dog_api_mock",
+      "description": "Wait for the mock server to accept requests.",
+      "action": "SLEEP",
+      "seconds": 1
+    }
+  ]
+}

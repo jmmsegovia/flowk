@@ -1,0 +1,114 @@
+{
+  "id": "postgres_demo_flow",
+  "description": "Sample flow for Postgres actions",
+  "imports": [
+    "./subflows/docker_postgres_local.json"
+  ],
+  "tasks": [
+    {
+      "id": "vars.postgres_platforms",
+      "description": "Declare Postgres platform configurations",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "platform_postgres_local",
+          "type": "object",
+          "value": {
+            "name": "local_postgres",
+            "postgres": {
+              "host": "127.0.0.1",
+              "port": "5434",
+              "sslmode": "disable",
+              "databases": [
+                {
+                  "name": "flowk_db",
+                  "schema": "public",
+                  "user": "flowk",
+                  "password": "flowk"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "check_connection_pg",
+      "description": "Check connection to Postgres",
+      "platform": "${platform_postgres_local}",
+      "action": "DB_POSTGRES_OPERATION",
+      "operation": "CHECK_CONNECTION"
+    },
+    {
+      "id": "create_demo_table_pg",
+      "description": "Create demo table",
+      "platform": "${platform_postgres_local}",
+      "action": "DB_POSTGRES_OPERATION",
+      "operation": "SQL",
+      "database": "flowk_db",
+      "command": "CREATE TABLE IF NOT EXISTS public.demo_customers (id SERIAL PRIMARY KEY, name TEXT NOT NULL, age INT NOT NULL, created_at TIMESTAMPTZ DEFAULT now())"
+    },
+    {
+      "id": "insert_demo_rows_pg",
+      "description": "Insert sample rows",
+      "platform": "${platform_postgres_local}",
+      "action": "DB_POSTGRES_OPERATION",
+      "operation": "SQL",
+      "database": "flowk_db",
+      "command": "INSERT INTO public.demo_customers (name, age) VALUES ('Ada', 37), ('Linus', 55) RETURNING id, name, age"
+    },
+    {
+      "id": "list_tables_pg",
+      "description": "List all tables",
+      "platform": "${platform_postgres_local}",
+      "action": "DB_POSTGRES_OPERATION",
+      "operation": "LIST_ALL_TABLES",
+      "database": "flowk_db"
+    },
+    {
+      "id": "list_objects_pg",
+      "description": "List all objects",
+      "platform": "${platform_postgres_local}",
+      "action": "DB_POSTGRES_OPERATION",
+      "operation": "LIST_ALL_OBJECTS",
+      "database": "flowk_db"
+    },
+    {
+      "id": "select_demo_rows_pg",
+      "description": "Select demo rows",
+      "platform": "${platform_postgres_local}",
+      "action": "DB_POSTGRES_OPERATION",
+      "operation": "SQL",
+      "database": "flowk_db",
+      "command": "SELECT id, name, age FROM public.demo_customers ORDER BY id"
+    },
+    {
+      "id": "truncate_demo_tables_pg",
+      "description": "Truncate all tables in flowk_db",
+      "platform": "${platform_postgres_local}",
+      "action": "DB_POSTGRES_OPERATION",
+      "operation": "TRUNCATE_ALL_TABLES",
+      "database": "flowk_db"
+    },
+    {
+      "id": "select_after_truncate_pg",
+      "description": "Select after truncate (should be empty)",
+      "platform": "${platform_postgres_local}",
+      "action": "DB_POSTGRES_OPERATION",
+      "operation": "SQL",
+      "database": "flowk_db",
+      "command": "SELECT id, name, age FROM public.demo_customers ORDER BY id"
+    },
+    {
+      "id": "drop_demo_table_pg",
+      "description": "Drop demo table",
+      "platform": "${platform_postgres_local}",
+      "action": "DB_POSTGRES_OPERATION",
+      "operation": "SQL",
+      "database": "flowk_db",
+      "command": "DROP TABLE IF EXISTS public.demo_customers"
+    }
+  ]
+}

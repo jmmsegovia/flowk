@@ -1,0 +1,111 @@
+{
+  "id": "forloop_demo",
+  "description": "Demonstrates using an evaluate task to implement a basic loop that prints numbers",
+  "tasks": [
+    {
+      "id": "vars.initialize_loop",
+      "description": "Initializes the loop counter and helpers",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "loop_counter",
+          "type": "number",
+          "value": 0
+        },
+        {
+          "name": "loop_increment",
+          "type": "number",
+          "value": 1
+        },
+        {
+          "name": "loop_limit",
+          "type": "number",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "print.start_message",
+      "description": "Announces the range that will be printed",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "Iterating from 0 to 2"
+        }
+      ]
+    },
+    {
+      "id": "print.loop_iteration",
+      "description": "Prints the current loop counter value",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "Counter value",
+          "variable": "loop_counter"
+        },
+        {
+          "message": "Current counter: ${loop_counter}"
+        }
+      ]
+    },
+    {
+      "id": "sleep_1",
+      "description": "Sleeps for 5 seconds",
+      "action": "SLEEP",
+      "seconds": 5
+    },
+    {
+      "id": "vars.increment_counter",
+      "description": "Increments the loop counter by one",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "loop_counter",
+          "type": "number",
+          "operation": {
+            "operator": "add",
+            "variable": "loop_increment"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sleep_2",
+      "description": "Sleeps for 10 seconds",
+      "action": "SLEEP",
+      "seconds": 10
+    },
+    {
+      "id": "evaluate.continue_loop",
+      "description": "Determines whether the loop should continue",
+      "action": "EVALUATE",
+      "if_conditions": [
+        {
+          "left": "${loop_counter}",
+          "operation": "<",
+          "right": "${loop_limit}"
+        }
+      ],
+      "then": {
+        "gototaskid": "print.loop_iteration"
+      },
+      "else": {
+        "continue": "Loop complete"
+      }
+    },
+    {
+      "id": "print.loop_complete",
+      "description": "Prints a completion message after the loop finishes",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "Loop finished"
+        }
+      ]
+    }
+  ]
+}

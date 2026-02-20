@@ -1,0 +1,66 @@
+{
+  "definitions": {
+    "task": {
+      "properties": {
+        "action": {
+          "enum": ["PRINT"]
+        },
+        "entries": {
+          "type": "array",
+          "description": "Entries to render. Each entry is an object with message text or a variable/task reference.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "message": {
+                "type": "string",
+                "description": "Static message to print."
+              },
+              "variable": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Variable name to resolve."
+              },
+              "taskId": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Task id to read output from."
+              },
+              "field": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Field name to read from task output."
+              },
+              "value": {
+                "description": "Literal value to print."
+              }
+            }
+          }
+        },
+        "description": {
+          "type": "string",
+          "description": "Task description"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "PRINT"
+              }
+            },
+            "required": ["action"]
+          },
+          "then": {
+            "required": [
+              "id",
+              "action",
+              "entries"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

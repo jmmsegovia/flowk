@@ -1,0 +1,231 @@
+/* --- Task Nodes (React Flow) --- */
+
+.react-flow__node-taskNode {
+  width: 320px;
+}
+
+.task-node {
+  background: white;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--slate-200);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-height: 100px;
+}
+
+.react-flow__node:hover .task-node {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: var(--primary-300);
+}
+
+.task-node.task-node--selected {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 2px var(--primary-100), var(--shadow-lg);
+  transform: translateY(-2px);
+  z-index: 10;
+}
+
+.task-node.task-node--stop {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 2px #fee2e2, var(--shadow-lg);
+}
+
+.task-node__stripe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+}
+
+.task-node__content-wrapper {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.task-node__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.task-node__icon-container {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease;
+}
+
+.task-node__icon-container svg {
+  width: 24px;
+  height: 24px;
+}
+
+.task-node__title-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  padding-top: 0.1rem;
+  flex: 1;
+}
+
+.task-node__title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--slate-900);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.task-node__id {
+  font-size: 0.75rem;
+  color: var(--slate-400);
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.task-node__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.task-node__meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.task-node__type-pill {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid transparent;
+}
+
+.task-node__op-pill {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--slate-600);
+  background: var(--slate-100);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 1px solid var(--slate-200);
+}
+
+.task-node__status-pill {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.6rem;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.task-node__status-pill--running {
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.task-node__status-pill--running::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse 1.5s infinite;
+}
+
+.task-node__status-pill--failed {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.task-node__status-pill--success {
+  background: var(--success-bg);
+  color: var(--success-text);
+  border: 1px solid rgba(22, 163, 74, 0.2);
+}
+
+.task-node__status-pill--pending {
+  background: var(--slate-100);
+  color: var(--slate-500);
+  border: 1px solid var(--slate-200);
+}
+
+.task-node__nested-info {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--slate-200);
+  font-size: 0.75rem;
+  color: var(--slate-500);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* Handles */
+.react-flow__handle.task-handle {
+  width: 10px;
+  height: 10px;
+  background: var(--slate-400);
+  border: 2px solid white;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.react-flow__handle.task-handle:hover {
+  background: var(--primary-500);
+  width: 12px;
+  height: 12px;
+}
+
+.react-flow__handle.task-handle--target {
+  left: -5px;
+}
+
+.react-flow__handle.task-handle--source {
+  right: -5px;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+
+.task-node__badge {
+    /* Legacy support just in case, though we moved to inline styles */
+    display: none;
+}

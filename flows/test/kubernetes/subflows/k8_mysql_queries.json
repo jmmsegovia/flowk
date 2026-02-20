@@ -1,0 +1,58 @@
+{
+  "id": "subflows.k8_mysql_queries",
+  "description": "Port-forward MySQL, run sample queries, and close the tunnel.",
+  "tasks": [
+    {
+      "id": "k8.port_forward_mysql",
+      "description": "Expose MySQL locally to run database queries.",
+      "action": "KUBERNETES",
+      "operation": "PORT_FORWARD",
+      "context": "${kube_context}",
+      "namespace": "${kube_namespace}",
+      "service": "${mysql_service}",
+      "local_port": 3307,
+      "service_port": 3306
+    },
+    {
+      "id": "mysql.check_connection",
+      "description": "Verify MySQL is reachable through the port-forward.",
+      "action": "DB_MYSQL_OPERATION",
+      "platform": "${platform_mysql_port_forward}",
+      "operation": "CHECK_CONNECTION"
+    },
+    {
+      "id": "mysql.create_table",
+      "description": "Create a table to track CI/CD runs.",
+      "action": "DB_MYSQL_OPERATION",
+      "platform": "${platform_mysql_port_forward}",
+      "operation": "SQL",
+      "database": "${mysql_database}",
+      "command": "CREATE TABLE IF NOT EXISTS cicd_runs (id INT AUTO_INCREMENT PRIMARY KEY, deployment VARCHAR(128) NOT NULL, status VARCHAR(32) NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
+    },
+    {
+      "id": "mysql.insert_run",
+      "description": "Insert a sample CI/CD run row.",
+      "action": "DB_MYSQL_OPERATION",
+      "platform": "${platform_mysql_port_forward}",
+      "operation": "SQL",
+      "database": "${mysql_database}",
+      "command": "INSERT INTO cicd_runs (deployment, status) VALUES ('${app_deployment}', 'ready')"
+    },
+    {
+      "id": "mysql.query_runs",
+      "description": "Query CI/CD run history.",
+      "action": "DB_MYSQL_OPERATION",
+      "platform": "${platform_mysql_port_forward}",
+      "operation": "SQL",
+      "database": "${mysql_database}",
+      "command": "SELECT id, deployment, status, created_at FROM cicd_runs ORDER BY id DESC LIMIT 5"
+    },
+    {
+      "id": "k8.stop_port_forward",
+      "description": "Stop the MySQL port-forward tunnel.",
+      "action": "KUBERNETES",
+      "operation": "STOP_PORT_FORWARD",
+      "local_port": 3307
+    }
+  ]
+}

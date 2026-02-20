@@ -1,0 +1,31 @@
+{
+  "id": "parallel.flow.demo",
+  "description": "Demonstrates the PARALLEL action executing multiple subtasks",
+  "tasks": [
+    {
+      "id": "parallel.work",
+      "description": "Execute subtasks concurrently",
+      "action": "PARALLEL",
+      "fail_fast": false,
+      "merge_strategy": "last_write_wins",
+      "merge_order": [
+        "sleep_1",
+        "sleep_2"
+      ],
+      "tasks": [
+        {
+          "id": "sleep_1",
+          "description": "Demonstrates sleep_1 the PARALLEL action executing multiple subtasks",
+          "action": "SLEEP",
+          "seconds": 5
+        },
+        {
+          "id": "sleep_2",
+          "description": "Demonstrates sleep_1 the PARALLEL action executing multiple subtasks",
+          "action": "SLEEP",
+          "seconds": 5
+        }
+      ]
+    }
+  ]
+}

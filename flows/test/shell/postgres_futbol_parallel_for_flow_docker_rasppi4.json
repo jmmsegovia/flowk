@@ -1,0 +1,260 @@
+{
+  "id": "postgres_futbol_parallel_for_flow_docker_rasppi4",
+  "description": "Postgres flow with FOR, PARALLEL, and EVALUATE using DOCKER actions (Docker included)",
+  "tasks": [
+    {
+      "id": "vars.postgres_futbol",
+      "description": "Declare Postgres platform configuration and expected values",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "platform_postgres_local",
+          "type": "object",
+          "value": {
+            "name": "local_postgres",
+            "postgres": {
+              "host": "127.0.0.1",
+              "port": "5434",
+              "sslmode": "disable",
+              "databases": [
+                {
+                  "name": "flowk_db",
+                  "schema": "public",
+                  "user": "flowk",
+                  "password": "flowk"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "postgres_container_name",
+          "type": "string",
+          "value": "flowk-postgres"
+        },
+        {
+          "name": "postgres_image",
+          "type": "string",
+          "value": "arm32v7/postgres:15"
+        },
+        {
+          "name": "postgres_port",
+          "type": "string",
+          "value": "5434"
+        },
+        {
+          "name": "postgres_user",
+          "type": "string",
+          "value": "flowk"
+        },
+        {
+          "name": "postgres_password",
+          "type": "string",
+          "value": "flowk"
+        },
+        {
+          "name": "postgres_database",
+          "type": "string",
+          "value": "flowk_db"
+        },
+        {
+          "name": "expected_player_count",
+          "type": "number",
+          "value": 4
+        },
+        {
+          "name": "expected_team",
+          "type": "string",
+          "value": "FC Barcelona"
+        }
+      ]
+    },
+    {
+      "id": "docker.image.pull.postgres",
+      "description": "Pull Postgres Docker image",
+      "action": "DOCKER",
+      "operation": "IMAGE_PULL",
+      "image": "${postgres_image}"
+    },
+    {
+      "id": "docker.container.run.postgres",
+      "description": "Run Postgres container",
+      "action": "DOCKER",
+      "operation": "CONTAINER_RUN",
+      "detach": true,
+      "remove_existing": true,
+      "image": "${postgres_image}",
+      "name": "${postgres_container_name}",
+      "env": [
+        "POSTGRES_PASSWORD=${postgres_password}",
+        "POSTGRES_USER=${postgres_user}",
+        "POSTGRES_DB=${postgres_database}"
+      ],
+      "ports": [
+        "${postgres_port}:5432"
+      ]
+    },
+    {
+      "id": "sleep.postgres.startup",
+      "description": "Give Postgres time to boot",
+      "action": "SLEEP",
+      "seconds": 8
+    },
+    {
+      "id": "docker.container.exec.postgres.ready",
+      "description": "Check Postgres is accepting connections",
+      "action": "DOCKER",
+      "operation": "CONTAINER_EXEC",
+      "container": "${postgres_container_name}",
+      "command": [
+        "sh",
+        "-c",
+        "for i in $(seq 1 20); do PGPASSWORD=${postgres_password} pg_isready -h 127.0.0.1 -U ${postgres_user} -d ${postgres_database} >/dev/null 2>&1 && exit 0; sleep 2; done; exit 1"
+      ],
+      "timeoutSeconds": 60
+    },
+    {
+      "id": "check_connection_postgres",
+      "description": "Check connection to Postgres",
+      "platform": "${platform_postgres_local}",
+      "action": "DB_POSTGRES_OPERATION",
+      "operation": "CHECK_CONNECTION"
+    },
+    {
+      "id": "create_players_table_postgres",
+      "description": "Create football players table",
+      "platform": "${platform_postgres_local}",
+      "action": "DB_POSTGRES_OPERATION",
+      "operation": "SQL",
+      "database": "flowk_db",
+      "command": "CREATE TABLE IF NOT EXISTS public.football_players (id SERIAL PRIMARY KEY, name TEXT NOT NULL, team TEXT NOT NULL, position TEXT NOT NULL, goals INT NOT NULL)"
+    },
+    {
+      "id": "truncate_players_table_postgres",
+      "description": "Ensure the table starts empty",
+      "platform": "${platform_postgres_local}",
+      "action": "DB_POSTGRES_OPERATION",
+      "operation": "SQL",
+      "database": "flowk_db",
+      "command": "TRUNCATE TABLE public.football_players"
+    },
+    {
+      "id": "for.insert_players",
+      "description": "Insert football players with FOR",
+      "action": "FOR",
+      "variable": "player_row",
+      "values": [
+        "Lionel Messi|Inter Miami|FW|10",
+        "Alexia Putellas|FC Barcelona|MF|8",
+        "Kylian Mbappe|Real Madrid|FW|12",
+        "Aitana Bonmati|FC Barcelona|MF|9"
+      ],
+      "tasks": [
+        {
+          "id": "insert_player_postgres",
+          "description": "Insert one football player",
+          "platform": "${platform_postgres_local}",
+          "action": "DB_POSTGRES_OPERATION",
+          "operation": "SQL",
+          "database": "flowk_db",
+          "command": "INSERT INTO public.football_players (name, team, position, goals) VALUES (split_part('${player_row}', '|', 1), split_part('${player_row}', '|', 2), split_part('${player_row}', '|', 3), split_part('${player_row}', '|', 4)::int)"
+        }
+      ]
+    },
+    {
+      "id": "parallel.futbol_queries",
+      "description": "Run football queries in parallel",
+      "action": "PARALLEL",
+      "fail_fast": false,
+      "merge_strategy": "last_write_wins",
+      "merge_order": [
+        "query.player_count",
+        "query.team_summary",
+        "query.goal_sum"
+      ],
+      "tasks": [
+        {
+          "id": "query.player_count",
+          "description": "Count total players",
+          "platform": "${platform_postgres_local}",
+          "action": "DB_POSTGRES_OPERATION",
+          "operation": "SQL",
+          "database": "flowk_db",
+          "command": "SELECT COUNT(*) AS total_players FROM public.football_players"
+        },
+        {
+          "id": "query.team_summary",
+          "description": "Players grouped by team",
+          "platform": "${platform_postgres_local}",
+          "action": "DB_POSTGRES_OPERATION",
+          "operation": "SQL",
+          "database": "flowk_db",
+          "command": "SELECT team, COUNT(*) AS players FROM public.football_players GROUP BY team ORDER BY players DESC, team"
+        },
+        {
+          "id": "query.goal_sum",
+          "description": "Sum of all goals",
+          "platform": "${platform_postgres_local}",
+          "action": "DB_POSTGRES_OPERATION",
+          "operation": "SQL",
+          "database": "flowk_db",
+          "command": "SELECT SUM(goals) AS total_goals FROM public.football_players"
+        }
+      ]
+    },
+    {
+      "id": "evaluate.futbol_expected",
+      "description": "Check that queries return the expected football data",
+      "action": "EVALUATE",
+      "if_conditions": [
+        {
+          "left": "${from.task:parallel.futbol_queries.result$['query.player_count'].result[0].total_players}",
+          "operation": "=",
+          "right": "${expected_player_count}"
+        },
+        {
+          "left": "${from.task:parallel.futbol_queries.result$['query.team_summary'].result[*].team}",
+          "operation": "CONTAINS",
+          "right": "${expected_team}"
+        }
+      ],
+      "then": {
+        "continue": "Football data matches the expected values"
+      },
+      "else": {
+        "exit": "Football data does not match the expected values"
+      }
+    },
+    {
+      "id": "truncate_all_tables_postgres",
+      "description": "Truncate all tables in flowk_db",
+      "platform": "${platform_postgres_local}",
+      "action": "DB_POSTGRES_OPERATION",
+      "operation": "TRUNCATE_ALL_TABLES",
+      "database": "flowk_db"
+    },
+    {
+      "id": "docker.container.stop.postgres",
+      "description": "Stop Postgres container",
+      "action": "DOCKER",
+      "operation": "CONTAINER_STOP",
+      "container": "${postgres_container_name}"
+    },
+    {
+      "id": "docker.container.remove.postgres",
+      "description": "Remove Postgres container",
+      "action": "DOCKER",
+      "operation": "CONTAINER_REMOVE",
+      "container": "${postgres_container_name}"
+    },
+    {
+      "id": "docker.image.remove.postgres",
+      "description": "Remove Postgres image",
+      "action": "DOCKER",
+      "operation": "IMAGE_REMOVE",
+      "image": "${postgres_image}"
+    }
+  ]
+}

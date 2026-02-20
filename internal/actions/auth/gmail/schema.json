@@ -1,0 +1,121 @@
+{
+  "definitions": {
+    "task": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "enum": [
+            "GMAIL"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "description": "Task description"
+        },
+        "operation": {
+          "type": "string",
+          "description": "Gmail operation to execute"
+        },
+        "access_token": {
+          "type": "string",
+          "minLength": 1,
+          "description": "OAuth2 access token with Gmail send scope"
+        },
+        "user_id": {
+          "type": "string",
+          "description": "Gmail user id for API path. Defaults to 'me'"
+        },
+        "raw_message": {
+          "type": "string",
+          "minLength": 1,
+          "description": "RFC 2822 email encoded in base64url (without padding)"
+        },
+        "headers": {
+          "type": "object",
+          "description": "Additional HTTP headers sent to Gmail API",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "timeoutSeconds": {
+          "type": "number",
+          "minimum": 0,
+          "description": "HTTP client timeout in seconds"
+        },
+        "insecureSkipVerify": {
+          "type": "boolean",
+          "description": "Skip TLS certificate verification for HTTPS endpoints"
+        },
+        "expected_status_codes": {
+          "type": "array",
+          "description": "Accepted HTTP status codes (defaults to [200])",
+          "items": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 599
+          },
+          "minItems": 1,
+          "maxItems": 10
+        },
+        "api_base_url": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional Gmail API base URL for testing (defaults to https://gmail.googleapis.com)"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "GMAIL"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "required": [
+              "id",
+              "action",
+              "operation"
+            ],
+            "properties": {
+              "operation": {
+                "enum": [
+                  "SEND_MESSAGE"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "GMAIL"
+              },
+              "operation": {
+                "const": "SEND_MESSAGE"
+              }
+            },
+            "required": [
+              "action",
+              "operation"
+            ]
+          },
+          "then": {
+            "required": [
+              "id",
+              "action",
+              "operation",
+              "access_token",
+              "raw_message"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

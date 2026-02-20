@@ -1,0 +1,55 @@
+{
+  "id": "vars_flow_tests",
+  "description": "Var tests json object",
+  "tasks": [
+    {
+      "id": "vars.test_json",
+      "description": "Test json vars",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "apiBaseUrl",
+          "type": "string",
+          "value": "https://dogapi.dog/api/v2"
+        },
+        {
+          "name": "platform_dispatcher_europe-west1",
+          "type": "object",
+          "value": {
+            "cassandra": {
+              "cluster": "localhost",
+              "port": "9111",
+              "keyspaces": [
+                {
+                  "name": "tic_dev02_disp",
+                  "type": "dispatcher",
+                  "user": "tic_dev02_disp_dbo",
+                  "password": "EXAMPLE_CASSANDRA_PASSWORD"
+                },
+                {
+                  "name": "tic_dev02_keymgr",
+                  "type": "keymanager",
+                  "user": "tic_dev02_keymgr_dbo",
+                  "password": "EXAMPLE_CASSANDRA_PASSWORD"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "print.vars_test",
+      "description": "Printing var from other task",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "apiBaseUrl",
+          "variable": "apiBaseUrl"
+        }
+      ]
+    }
+  ]
+}

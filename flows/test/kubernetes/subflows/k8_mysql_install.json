@@ -1,0 +1,41 @@
+{
+  "id": "subflows.k8_mysql_install",
+  "description": "Install MySQL via Helm and wait for readiness.",
+  "tasks": [
+    {
+      "id": "helm.install_mysql",
+      "action": "HELM",
+      "description": "Install MySQL for the CI/CD pipeline using the local mysql-lite chart.",
+      "operation": "INSTALL",
+      "release_name": "${mysql_release}",
+      "chart": "${mysql_chart}",
+      "namespace": "${kube_namespace}",
+      "kube_context": "${kube_context}",
+      "create_namespace": true,
+      "wait": true,
+      "timeout_seconds": 180,
+      "set_values": [
+        "fullnameOverride=${mysql_release}",
+        "image.repository=mysql",
+        "image.tag=8.0",
+        "env.rootPassword=${mysql_root_password}",
+        "env.database=${mysql_database}",
+        "env.user=${mysql_user}",
+        "env.password=${mysql_password}"
+      ]
+    },
+    {
+      "id": "k8.wait_mysql_ready",
+      "description": "Wait for MySQL to become ready before connecting.",
+      "action": "KUBERNETES",
+      "operation": "WAIT_FOR_POD_READINESS",
+      "context": "${kube_context}",
+      "namespace": "${kube_namespace}",
+      "deployments": [
+        "${mysql_deployment}"
+      ],
+      "max_wait_seconds": 180,
+      "poll_interval_seconds": 5
+    }
+  ]
+}

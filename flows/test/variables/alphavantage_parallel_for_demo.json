@@ -1,0 +1,275 @@
+{
+  "id": "alphavantage.parallel.for.demo",
+  "description": "Demonstrates FOR and PARALLEL actions using Yahoo Finance chart endpoints to gather market snapshots",
+  "tasks": [
+    {
+      "id": "vars.configure_yahoo_finance",
+      "description": "Declares shared configuration for Yahoo Finance queries",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "chartBaseUrl",
+          "type": "string",
+          "value": "https://query1.finance.yahoo.com/v8/finance/chart"
+        },
+        {
+          "name": "chartInterval",
+          "type": "string",
+          "value": "1d"
+        },
+        {
+          "name": "chartRange",
+          "type": "string",
+          "value": "5y"
+        },
+        {
+          "name": "monitoredSymbols",
+          "type": "array",
+          "value": [
+            "IBM",
+            "MSFT",
+            "AAPL"
+          ]
+        },
+        {
+          "name": "parallelSymbols",
+          "type": "array",
+          "value": [
+            "IBM",
+            "MSFT"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vars.initialize_loop_summary",
+      "description": "Initializes variables updated by the FOR loop",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "lastProcessedSymbol",
+          "type": "string",
+          "value": ""
+        },
+        {
+          "name": "lastMarketPrice",
+          "type": "number",
+          "value": 0
+        },
+        {
+          "name": "lastMarketTime",
+          "type": "number",
+          "value": 0
+        },
+        {
+          "name": "lastExchangeName",
+          "type": "string",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "id": "loop.price_snapshots",
+      "description": "Iterates through the monitored symbols and records their most recent market metadata",
+      "action": "FOR",
+      "variable": "currentSymbol",
+      "values": [
+        "IBM",
+        "MSFT",
+        "AAPL"
+      ],
+      "tasks": [
+        {
+          "id": "http.fetch_chart",
+          "description": "Calls the Yahoo Finance chart API for the current symbol",
+          "action": "HTTP_REQUEST",
+          "protocol": "HTTPS",
+          "method": "GET",
+          "url": "${chartBaseUrl}/${currentSymbol}?interval=${chartInterval}&range=${chartRange}",
+          "headers": {
+            "Accept": "application/json",
+            "User-Agent": "FlowKBot/1.0"
+          }
+        },
+        {
+          "id": "evaluate.chart_result_ready",
+          "description": "Ensures the Yahoo response carries chart data",
+          "action": "EVALUATE",
+          "if_conditions": [
+            {
+              "left": "${from.task:http.fetch_chart.result$.response.body.chart.result.length()}",
+              "operation": ">",
+              "right": 0
+            }
+          ],
+          "then": {
+            "continue": "Chart data detected for ${currentSymbol}"
+          },
+          "else": {
+            "exit": "Yahoo Finance did not return chart data for ${currentSymbol}"
+          }
+        },
+        {
+          "id": "vars.extract_loop_metrics",
+          "description": "Captures the current symbol metadata for downstream tasks",
+          "action": "VARIABLES",
+          "scope": "flow",
+          "overwrite": true,
+          "vars": [
+            {
+              "name": "lastProcessedSymbol",
+              "type": "string",
+              "value": "${currentSymbol}"
+            },
+            {
+              "name": "lastMarketPrice",
+              "type": "number",
+              "value": "${from.task:http.fetch_chart.result$.response.body.chart.result[0].meta.regularMarketPrice}"
+            },
+            {
+              "name": "lastMarketTime",
+              "type": "number",
+              "value": "${from.task:http.fetch_chart.result$.response.body.chart.result[0].meta.regularMarketTime}"
+            },
+            {
+              "name": "lastExchangeName",
+              "type": "string",
+              "value": "${from.task:http.fetch_chart.result$.response.body.chart.result[0].meta.exchangeName}"
+            }
+          ]
+        },
+        {
+          "id": "print.loop_summary",
+          "description": "Logs the metadata gathered for the current symbol",
+          "action": "PRINT",
+          "entries": [
+            {
+              "message": "Symbol ${lastProcessedSymbol} @ ${lastExchangeName}",
+              "value": "Price ${lastMarketPrice} (epoch ${lastMarketTime})"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "parallel.latest_quotes",
+      "description": "Fetches two live quotes in parallel",
+      "action": "PARALLEL",
+      "fail_fast": false,
+      "merge_strategy": "last_write_wins",
+      "merge_order": [
+        "quote.ibm",
+        "quote.msft"
+      ],
+      "tasks": [
+        {
+          "id": "quote.ibm",
+          "description": "Fetches and stores the IBM quote snapshot",
+          "action": "FOR",
+          "variable": "parallelSymbolIbm",
+          "values": [
+            "IBM"
+          ],
+          "tasks": [
+            {
+              "id": "http.parallel.ibm",
+              "description": "Queries the Yahoo Finance chart API for IBM",
+              "action": "HTTP_REQUEST",
+              "protocol": "HTTPS",
+              "method": "GET",
+              "url": "${chartBaseUrl}/${parallelSymbolIbm}?interval=1d&range=1mo",
+              "headers": {
+                "Accept": "application/json",
+                "User-Agent": "FlowKBot/1.0"
+              }
+            },
+            {
+              "id": "vars.parallel.ibm",
+              "description": "Stores IBM metadata for downstream consumers",
+              "action": "VARIABLES",
+              "scope": "flow",
+              "overwrite": true,
+              "vars": [
+                {
+                  "name": "parallelIBMPrice",
+                  "type": "number",
+                  "value": "${from.task:http.parallel.ibm.result$.response.body.chart.result[0].meta.regularMarketPrice}"
+                },
+                {
+                  "name": "parallelIBMTime",
+                  "type": "number",
+                  "value": "${from.task:http.parallel.ibm.result$.response.body.chart.result[0].meta.regularMarketTime}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "quote.msft",
+          "description": "Fetches and stores the MSFT quote snapshot",
+          "action": "FOR",
+          "variable": "parallelSymbolMsft",
+          "values": [
+            "MSFT"
+          ],
+          "tasks": [
+            {
+              "id": "http.parallel.msft",
+              "description": "Queries the Yahoo Finance chart API for MSFT",
+              "action": "HTTP_REQUEST",
+              "protocol": "HTTPS",
+              "method": "GET",
+              "url": "${chartBaseUrl}/${parallelSymbolMsft}?interval=1d&range=1mo",
+              "headers": {
+                "Accept": "application/json",
+                "User-Agent": "FlowKBot/1.0"
+              }
+            },
+            {
+              "id": "vars.parallel.msft",
+              "description": "Stores MSFT metadata for downstream consumers",
+              "action": "VARIABLES",
+              "scope": "flow",
+              "overwrite": true,
+              "vars": [
+                {
+                  "name": "parallelMSFTPrice",
+                  "type": "number",
+                  "value": "${from.task:http.parallel.msft.result$.response.body.chart.result[0].meta.regularMarketPrice}"
+                },
+                {
+                  "name": "parallelMSFTTime",
+                  "type": "number",
+                  "value": "${from.task:http.parallel.msft.result$.response.body.chart.result[0].meta.regularMarketTime}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "print.parallel_summary",
+      "description": "Summarizes the data returned by the parallel quote requests",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "IBM regular market price",
+          "value": "${parallelIBMPrice}"
+        },
+        {
+          "message": "MSFT regular market price",
+          "value": "${parallelMSFTPrice}"
+        },
+        {
+          "message": "Monitored symbols",
+          "variable": "monitoredSymbols"
+        }
+      ]
+    }
+  ]
+}

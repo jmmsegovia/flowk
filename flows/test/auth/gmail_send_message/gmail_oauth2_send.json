@@ -1,0 +1,41 @@
+{
+  "id": "gmail_send_message_demo",
+  "description": "Refresh OAuth2 access token and send a Gmail message using the GMAIL action",
+  "imports": [
+    "../flow_credentials/gmail_secrets_sf.json"
+  ],
+  "tasks": [
+    {
+      "id": "build_gmail_message_base64url",
+      "description": "Build RFC822 message and base64url encode it",
+      "action": "BASE64",
+      "operation": "ENCODE",
+      "input": "From: ${gmail_from}\nTo: ${gmail_to}\nSubject: FlowK Test\n\nHello, this is a test email sent with FlowK.\n",
+      "urlSafe": true
+    },
+    {
+      "id": "refresh_access_token",
+      "action": "HTTP_REQUEST",
+      "protocol": "HTTPS",
+      "method": "POST",
+      "url": "https://oauth2.googleapis.com/token",
+      "headers": {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      "body": "grant_type=refresh_token&client_id=${google_client_id}&client_secret=${google_client_secret}&refresh_token=${gmail_refresh_token}",
+      "accepted_status_codes": [
+        200
+      ]
+    },
+    {
+      "id": "send_message",
+      "action": "GMAIL",
+      "operation": "SEND_MESSAGE",
+      "access_token": "${from.task:refresh_access_token.result$.response.body.access_token}",
+      "raw_message": "${from.task:build_gmail_message_base64url.result$.stdout}",
+      "expected_status_codes": [
+        200
+      ]
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "definitions": {
+    "task": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "enum": ["SHELL"]
+        },
+        "shell": {
+          "$ref": "#/definitions/shellOptions"
+        },
+        "environment": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/shellEnvironmentVariable"
+          }
+        },
+        "proxyVariables": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Names of VARIABLES entries with type proxy whose contents should be exported as environment proxies."
+        },
+        "workingDirectory": {
+          "type": "string"
+        },
+        "timeoutSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "continueOnError": {
+          "type": "boolean"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "SHELL"
+              }
+            },
+            "required": ["action"]
+          },
+          "then": {
+            "required": [
+              "id",
+              "action",
+              "command"
+            ],
+            "properties": {
+              "command": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "description": "Commands executed via the shell, one string per line. Lines are joined with newlines at runtime."
+              }
+            }
+          }
+        }
+      ]
+    },
+    "shellOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["program"],
+      "properties": {
+        "program": {
+          "type": "string",
+          "minLength": 1
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "shellEnvironmentVariable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "value": {},
+        "secret": {
+          "type": "boolean"
+        },
+        "proxy": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

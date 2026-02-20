@@ -1,0 +1,48 @@
+{
+  "id": "docker_cassandra_local_setup",
+  "description": "Start a local Cassandra container and prepare keyspaces for test flows.",
+  "tasks": [
+    {
+      "id": "docker.pull.cassandra",
+      "action": "DOCKER",
+      "operation": "IMAGE_PULL",
+      "image": "cassandra:4.1"
+    },
+    {
+      "id": "docker.run.cassandra",
+      "action": "DOCKER",
+      "operation": "CONTAINER_RUN",
+      "image": "cassandra:4.1",
+      "name": "flowk-cassandra",
+      "detach": true,
+      "remove_existing": true,
+      "ports": [
+        "9042:9042"
+      ]
+    },
+    {
+      "id": "sleep.cassandra_boot",
+      "description": "Wait for Cassandra to accept connections.",
+      "action": "DOCKER",
+      "operation": "CONTAINER_EXEC",
+      "container": "flowk-cassandra",
+      "command": [
+        "/bin/sh",
+        "-c",
+        "i=0; while [ $i -lt 30 ]; do cqlsh -e \"describe keyspaces\" >/dev/null 2>&1 && exit 0; i=$((i+1)); sleep 2; done; exit 1"
+      ]
+    },
+    {
+      "id": "docker.cassandra.init_keyspaces",
+      "description": "Create keyspaces and demo tables for the Cassandra flows.",
+      "action": "DOCKER",
+      "operation": "CONTAINER_EXEC",
+      "container": "flowk-cassandra",
+      "command": [
+        "cqlsh",
+        "-e",
+        "CREATE KEYSPACE IF NOT EXISTS alpha_dev10_mgr WITH replication = {'class':'SimpleStrategy','replication_factor':1}; CREATE KEYSPACE IF NOT EXISTS alpha_dev10_disp WITH replication = {'class':'SimpleStrategy','replication_factor':1}; CREATE KEYSPACE IF NOT EXISTS alpha_dev10_keymgr WITH replication = {'class':'SimpleStrategy','replication_factor':1}; CREATE KEYSPACE IF NOT EXISTS sales WITH replication = {'class':'SimpleStrategy','replication_factor':1}; CREATE KEYSPACE IF NOT EXISTS customers WITH replication = {'class':'SimpleStrategy','replication_factor':1}; CREATE KEYSPACE IF NOT EXISTS products WITH replication = {'class':'SimpleStrategy','replication_factor':1}; CREATE KEYSPACE IF NOT EXISTS shop WITH replication = {'class':'SimpleStrategy','replication_factor':1}; CREATE KEYSPACE IF NOT EXISTS analytics WITH replication = {'class':'SimpleStrategy','replication_factor':1}; CREATE KEYSPACE IF NOT EXISTS tic_dev02_disp WITH replication = {'class':'SimpleStrategy','replication_factor':1}; CREATE KEYSPACE IF NOT EXISTS tic_dev02_keymgr WITH replication = {'class':'SimpleStrategy','replication_factor':1}; CREATE TABLE IF NOT EXISTS shop.customers (id text PRIMARY KEY, name text);"
+      ]
+    }
+  ]
+}

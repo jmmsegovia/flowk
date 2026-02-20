@@ -1,0 +1,6 @@
+apiVersion: v2
+name: mysql-lite
+description: Minimal MySQL chart for FlowK CI/CD example
+type: application
+version: 0.1.0
+appVersion: "8.0"

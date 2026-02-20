@@ -1,0 +1,330 @@
+{
+  "id": "subflows.demo_mysql_musicbrainz_docker",
+  "description": "MySQL flow that persists MusicBrainz artist data using Docker, FOR, PARALLEL, and EVALUATE actions.",
+  "tasks": [
+    {
+      "id": "vars.mysql_musicbrainz",
+      "description": "Declare MySQL platform configuration and expected values",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "platform_mysql_local",
+          "type": "object",
+          "value": {
+            "name": "local_mysql",
+            "mysql": {
+              "host": "127.0.0.1",
+              "port": "3307",
+              "databases": [
+                {
+                  "name": "flowk_db",
+                  "user": "flowk",
+                  "password": "flowk"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "mysql_container_name",
+          "type": "string",
+          "value": "flowk-mysql"
+        },
+        {
+          "name": "mysql_image",
+          "type": "string",
+          "value": "mysql:8.0"
+        },
+        {
+          "name": "mysql_port",
+          "type": "string",
+          "value": "3307"
+        },
+        {
+          "name": "mysql_root_password",
+          "type": "string",
+          "value": "flowk"
+        },
+        {
+          "name": "mysql_user",
+          "type": "string",
+          "value": "flowk"
+        },
+        {
+          "name": "mysql_password",
+          "type": "string",
+          "value": "flowk"
+        },
+        {
+          "name": "mysql_database",
+          "type": "string",
+          "value": "flowk_db"
+        },
+        {
+          "name": "expected_profile_rows",
+          "type": "number",
+          "value": 1
+        },
+        {
+          "name": "expected_tag_rows",
+          "type": "number",
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "docker.image.pull.mysql",
+      "description": "Pull MySQL Docker image",
+      "action": "DOCKER",
+      "operation": "IMAGE_PULL",
+      "image": "${mysql_image}"
+    },
+    {
+      "id": "docker.container.run.mysql",
+      "description": "Run MySQL container",
+      "action": "DOCKER",
+      "operation": "CONTAINER_RUN",
+      "detach": true,
+      "remove_existing": true,
+      "image": "${mysql_image}",
+      "name": "${mysql_container_name}",
+      "env": [
+        "MYSQL_ROOT_PASSWORD=${mysql_root_password}",
+        "MYSQL_DATABASE=${mysql_database}",
+        "MYSQL_USER=${mysql_user}",
+        "MYSQL_PASSWORD=${mysql_password}"
+      ],
+      "ports": ["${mysql_port}:3306"],
+      "command": ["--default-authentication-plugin=mysql_native_password"]
+    },
+    {
+      "id": "sleep.mysql.startup",
+      "description": "Give MySQL time to boot",
+      "action": "SLEEP",
+      "seconds": 8
+    },
+    {
+      "id": "docker.container.exec.mysql.ping",
+      "description": "Check MySQL is accepting connections",
+      "action": "DOCKER",
+      "operation": "CONTAINER_EXEC",
+      "container": "${mysql_container_name}",
+      "command": [
+        "sh",
+        "-c",
+        "for i in $(seq 1 20); do mysqladmin ping -h 127.0.0.1 -uroot -p${mysql_root_password} --silent && exit 0; sleep 2; done; exit 1"
+      ],
+      "timeoutSeconds": 60
+    },
+    {
+      "id": "check_connection_mysql",
+      "description": "Check connection to MySQL",
+      "platform": "${platform_mysql_local}",
+      "action": "DB_MYSQL_OPERATION",
+      "operation": "CHECK_CONNECTION"
+    },
+    {
+      "id": "create_artist_profile_table_mysql",
+      "description": "Create MusicBrainz artist profile table",
+      "platform": "${platform_mysql_local}",
+      "action": "DB_MYSQL_OPERATION",
+      "operation": "SQL",
+      "database": "flowk_db",
+      "command": "CREATE TABLE IF NOT EXISTS musicbrainz_artist_profile (id INT AUTO_INCREMENT PRIMARY KEY, artist_name VARCHAR(255) NOT NULL, country CHAR(2) NOT NULL, begin_year VARCHAR(10) NOT NULL, begin_area VARCHAR(255) NOT NULL)"
+    },
+    {
+      "id": "create_artist_tags_table_mysql",
+      "description": "Create MusicBrainz artist tags table",
+      "platform": "${platform_mysql_local}",
+      "action": "DB_MYSQL_OPERATION",
+      "operation": "SQL",
+      "database": "flowk_db",
+      "command": "CREATE TABLE IF NOT EXISTS musicbrainz_artist_tags (id INT AUTO_INCREMENT PRIMARY KEY, tag_key VARCHAR(50) NOT NULL, tag_value VARCHAR(255) NOT NULL)"
+    },
+    {
+      "id": "truncate_artist_profile_mysql",
+      "description": "Ensure the artist profile table starts empty",
+      "platform": "${platform_mysql_local}",
+      "action": "DB_MYSQL_OPERATION",
+      "operation": "SQL",
+      "database": "flowk_db",
+      "command": "TRUNCATE TABLE musicbrainz_artist_profile"
+    },
+    {
+      "id": "truncate_artist_tags_mysql",
+      "description": "Ensure the artist tags table starts empty",
+      "platform": "${platform_mysql_local}",
+      "action": "DB_MYSQL_OPERATION",
+      "operation": "SQL",
+      "database": "flowk_db",
+      "command": "TRUNCATE TABLE musicbrainz_artist_tags"
+    },
+    {
+      "id": "insert_artist_profile_mysql",
+      "description": "Insert the MusicBrainz artist profile",
+      "platform": "${platform_mysql_local}",
+      "action": "DB_MYSQL_OPERATION",
+      "operation": "SQL",
+      "database": "flowk_db",
+      "command": "INSERT INTO musicbrainz_artist_profile (artist_name, country, begin_year, begin_area) VALUES ('${demo_musicbrainz_artist}', '${demo_musicbrainz_country}', '${demo_musicbrainz_begin_year}', '${demo_musicbrainz_begin_area}')"
+    },
+    {
+      "id": "for.insert_artist_tags",
+      "description": "Insert MusicBrainz artist tags with FOR",
+      "action": "FOR",
+      "variable": "tag_row",
+      "values": [
+        "artist|${demo_musicbrainz_artist}",
+        "country|${demo_musicbrainz_country}",
+        "begin_year|${demo_musicbrainz_begin_year}",
+        "begin_area|${demo_musicbrainz_begin_area}"
+      ],
+      "tasks": [
+        {
+          "id": "insert_artist_tag_mysql",
+          "description": "Insert one MusicBrainz artist tag",
+          "platform": "${platform_mysql_local}",
+          "action": "DB_MYSQL_OPERATION",
+          "operation": "SQL",
+          "database": "flowk_db",
+          "command": "INSERT INTO musicbrainz_artist_tags (tag_key, tag_value) VALUES (SUBSTRING_INDEX('${tag_row}', '|', 1), SUBSTRING_INDEX('${tag_row}', '|', -1))"
+        }
+      ]
+    },
+    {
+      "id": "parallel.musicbrainz_queries",
+      "description": "Run MusicBrainz queries in parallel",
+      "action": "PARALLEL",
+      "fail_fast": false,
+      "merge_strategy": "last_write_wins",
+      "merge_order": [
+        "query.profile_count",
+        "query.tag_count",
+        "query.country_summary"
+      ],
+      "tasks": [
+        {
+          "id": "query.profile_count",
+          "description": "Count artist profile rows",
+          "platform": "${platform_mysql_local}",
+          "action": "DB_MYSQL_OPERATION",
+          "operation": "SQL",
+          "database": "flowk_db",
+          "command": "SELECT COUNT(*) AS total_profiles FROM musicbrainz_artist_profile"
+        },
+        {
+          "id": "query.tag_count",
+          "description": "Count tag rows",
+          "platform": "${platform_mysql_local}",
+          "action": "DB_MYSQL_OPERATION",
+          "operation": "SQL",
+          "database": "flowk_db",
+          "command": "SELECT COUNT(*) AS total_tags FROM musicbrainz_artist_tags"
+        },
+        {
+          "id": "query.country_summary",
+          "description": "Summarize by country",
+          "platform": "${platform_mysql_local}",
+          "action": "DB_MYSQL_OPERATION",
+          "operation": "SQL",
+          "database": "flowk_db",
+          "command": "SELECT country, COUNT(*) AS artists FROM musicbrainz_artist_profile GROUP BY country"
+        }
+      ]
+    },
+    {
+      "id": "evaluate.musicbrainz_expected",
+      "description": "Check that MusicBrainz queries return the expected data",
+      "action": "EVALUATE",
+      "if_conditions": [
+        {
+          "left": "${from.task:parallel.musicbrainz_queries.result$['query.profile_count'].result[0].total_profiles}",
+          "operation": "=",
+          "right": "${expected_profile_rows}"
+        },
+        {
+          "left": "${from.task:parallel.musicbrainz_queries.result$['query.tag_count'].result[0].total_tags}",
+          "operation": "=",
+          "right": "${expected_tag_rows}"
+        },
+        {
+          "left": "${from.task:parallel.musicbrainz_queries.result$['query.country_summary'].result[*].country}",
+          "operation": "CONTAINS",
+          "right": "${demo_musicbrainz_country}"
+        }
+      ],
+      "then": {
+        "continue": "MusicBrainz data matches the expected values"
+      },
+      "else": {
+        "exit": "MusicBrainz data does not match the expected values"
+      }
+    },
+    {
+      "id": "vars.mysql_summary",
+      "description": "Capture MySQL MusicBrainz query results for downstream reporting",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "vars": [
+        {
+          "name": "demo_mysql_profile_rows",
+          "type": "number",
+          "value": "${from.task:parallel.musicbrainz_queries.result$['query.profile_count'].result[0].total_profiles}"
+        },
+        {
+          "name": "demo_mysql_tag_rows",
+          "type": "number",
+          "value": "${from.task:parallel.musicbrainz_queries.result$['query.tag_count'].result[0].total_tags}"
+        },
+        {
+          "name": "demo_mysql_countries",
+          "type": "array",
+          "value": "${from.task:parallel.musicbrainz_queries.result$['query.country_summary'].result[*].country}"
+        }
+      ]
+    },
+    {
+      "id": "print.mysql_summary",
+      "description": "Print the MySQL MusicBrainz summary",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "MySQL profile rows",
+          "variable": "demo_mysql_profile_rows"
+        },
+        {
+          "message": "MySQL tag rows",
+          "variable": "demo_mysql_tag_rows"
+        },
+        {
+          "message": "MySQL countries",
+          "variable": "demo_mysql_countries"
+        }
+      ]
+    },
+    {
+      "id": "truncate_all_tables_mysql",
+      "description": "Truncate all tables in flowk_db",
+      "platform": "${platform_mysql_local}",
+      "action": "DB_MYSQL_OPERATION",
+      "operation": "TRUNCATE_ALL_TABLES",
+      "database": "flowk_db"
+    },
+    {
+      "id": "docker.container.stop.mysql",
+      "description": "Stop MySQL container",
+      "action": "DOCKER",
+      "operation": "CONTAINER_STOP",
+      "container": "${mysql_container_name}"
+    },
+    {
+      "id": "docker.container.remove.mysql",
+      "description": "Remove MySQL container",
+      "action": "DOCKER",
+      "operation": "CONTAINER_REMOVE",
+      "container": "${mysql_container_name}"
+    }
+  ]
+}

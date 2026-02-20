@@ -1,0 +1,99 @@
+{
+  "definitions": {
+    "task": {
+      "properties": {
+        "action": {
+          "enum": ["FOR"]
+        },
+        "variable": {
+          "type": "string",
+          "minLength": 1
+        },
+        "initial": {
+          "type": "number"
+        },
+        "require_break": {
+          "type": "boolean"
+        },
+        "condition": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["operator", "value"],
+          "properties": {
+            "operator": {
+              "type": "string",
+              "enum": ["==", "!=", "<", "<=", ">", ">="]
+            },
+            "value": {
+              "type": "number"
+            }
+          }
+        },
+        "step": {
+          "type": "number"
+        },
+        "max_iterations": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "FOR"
+              }
+            },
+            "required": ["action"]
+          },
+          "then": {
+            "required": [
+              "id",
+              "action",
+              "variable",
+              "tasks"
+            ],
+            "properties": {
+              "tasks": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/definitions/task"
+                }
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "values": {}
+                  },
+                  "required": ["values"]
+                },
+                "then": {
+                  "not": {
+                    "anyOf": [
+                      { "required": ["initial"] },
+                      { "required": ["condition"] },
+                      { "required": ["step"] }
+                    ]
+                  }
+                },
+                "else": {
+                  "required": ["initial", "condition", "step"]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

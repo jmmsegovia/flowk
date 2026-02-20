@@ -1,0 +1,435 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "task": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "enum": ["PGP"]
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "PGP"
+              }
+            },
+            "required": ["action"]
+          },
+          "then": {
+            "properties": {
+              "steps": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/definitions/pgpStep"
+                }
+              }
+            },
+            "required": ["id", "action", "steps"]
+          }
+        }
+      ]
+    },
+    "pgpStep": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "operation": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": ["operation"],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "GENERATE_KEY"
+              }
+            },
+            "required": ["operation"]
+          },
+          "then": {
+            "additionalProperties": false,
+            "required": ["operation", "alias"],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "operation": {
+                "const": "GENERATE_KEY"
+              },
+              "alias": {
+                "type": "string",
+                "minLength": 1
+              },
+              "name": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              },
+              "comment": {
+                "type": "string"
+              },
+              "rsaBits": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "privateKeyPath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "publicKeyPath": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "anyOf": [
+              { "required": ["name"] },
+              { "required": ["email"] }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "IMPORT_KEY"
+              }
+            },
+            "required": ["operation"]
+          },
+          "then": {
+            "additionalProperties": false,
+            "required": ["operation", "alias"],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "operation": {
+                "const": "IMPORT_KEY"
+              },
+              "alias": {
+                "type": "string",
+                "minLength": 1
+              },
+              "key": {
+                "type": "string"
+              },
+              "keyPath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "passphrase": {
+                "type": "string"
+              }
+            },
+            "anyOf": [
+              {
+                "required": ["key"]
+              },
+              {
+                "required": ["keyPath"]
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "ENCRYPT"
+              }
+            },
+            "required": ["operation"]
+          },
+          "then": {
+            "additionalProperties": false,
+            "required": ["operation"],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "operation": {
+                "const": "ENCRYPT"
+              },
+              "recipients": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "message": {
+                "type": "string"
+              },
+              "messagePath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "password": {
+                "type": "string",
+                "minLength": 1
+              },
+              "armor": {
+                "type": "boolean"
+              },
+              "outputPath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "signWith": {
+                "type": "string",
+                "minLength": 1
+              },
+              "fileName": {
+                "type": "string"
+              },
+              "binary": {
+                "type": "boolean"
+              },
+              "resultEncoding": {
+                "type": "string",
+                "enum": ["base64", "binary"]
+              }
+            },
+            "anyOf": [
+              {
+                "required": ["message"]
+              },
+              {
+                "required": ["messagePath"]
+              }
+            ],
+            "allOf": [
+              {
+                "anyOf": [
+                  { "required": ["recipients"] },
+                  { "required": ["password"] }
+                ]
+              },
+              {
+                "not": {
+                  "allOf": [
+                    { "required": ["recipients"] },
+                    { "required": ["password"] }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "DECRYPT"
+              }
+            },
+            "required": ["operation"]
+          },
+          "then": {
+            "additionalProperties": false,
+            "required": ["operation"],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "operation": {
+                "const": "DECRYPT"
+              },
+              "message": {
+                "type": "string"
+              },
+              "messagePath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "keyAliases": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "passwords": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "requireSignature": {
+                "type": "boolean"
+              },
+              "allowedSigners": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "outputPath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "outputEncoding": {
+                "type": "string",
+                "enum": ["utf8", "string", "base64"]
+              }
+            },
+            "anyOf": [
+              {
+                "required": ["message"]
+              },
+              {
+                "required": ["messagePath"]
+              }
+            ],
+            "allOf": [
+              {
+                "anyOf": [
+                  { "required": ["keyAliases"] },
+                  { "required": ["passwords"] }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "SIGN_DETACHED"
+              }
+            },
+            "required": ["operation"]
+          },
+          "then": {
+            "additionalProperties": false,
+            "required": ["operation", "signWith"],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "operation": {
+                "const": "SIGN_DETACHED"
+              },
+              "signWith": {
+                "type": "string",
+                "minLength": 1
+              },
+              "message": {
+                "type": "string"
+              },
+              "messagePath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "armor": {
+                "type": "boolean"
+              },
+              "outputPath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "textMode": {
+                "type": "boolean"
+              },
+              "resultEncoding": {
+                "type": "string",
+                "enum": ["base64", "binary"]
+              }
+            },
+            "anyOf": [
+              {
+                "required": ["message"]
+              },
+              {
+                "required": ["messagePath"]
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "VERIFY_DETACHED"
+              }
+            },
+            "required": ["operation"]
+          },
+          "then": {
+            "additionalProperties": false,
+            "required": ["operation", "keyAliases"],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "operation": {
+                "const": "VERIFY_DETACHED"
+              },
+              "message": {
+                "type": "string"
+              },
+              "messagePath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "signature": {
+                "type": "string"
+              },
+              "signaturePath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "keyAliases": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "allOf": [
+              {
+                "anyOf": [
+                  {
+                    "required": ["message"]
+                  },
+                  {
+                    "required": ["messagePath"]
+                  }
+                ]
+              },
+              {
+                "anyOf": [
+                  {
+                    "required": ["signature"]
+                  },
+                  {
+                    "required": ["signaturePath"]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

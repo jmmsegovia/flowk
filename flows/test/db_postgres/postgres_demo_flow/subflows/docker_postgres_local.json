@@ -1,0 +1,35 @@
+{
+  "id": "docker_postgres_local_setup",
+  "description": "Start a local Postgres container for test flows.",
+  "tasks": [
+    {
+      "id": "docker.pull.postgres",
+      "action": "DOCKER",
+      "operation": "IMAGE_PULL",
+      "image": "postgres:16"
+    },
+    {
+      "id": "docker.run.postgres",
+      "action": "DOCKER",
+      "operation": "CONTAINER_RUN",
+      "image": "postgres:16",
+      "name": "flowk-postgres",
+      "detach": true,
+      "remove_existing": true,
+      "env": [
+        "POSTGRES_USER=flowk",
+        "POSTGRES_PASSWORD=flowk",
+        "POSTGRES_DB=flowk_db"
+      ],
+      "ports": [
+        "5434:5432"
+      ]
+    },
+    {
+      "id": "sleep.postgres_boot",
+      "description": "Wait for Postgres to accept connections.",
+      "action": "SLEEP",
+      "seconds": 5
+    }
+  ]
+}

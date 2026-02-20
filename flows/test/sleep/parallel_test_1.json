@@ -1,0 +1,18 @@
+{
+  "id": "no_parallel.flow.demo",
+  "description": "Demonstrates the NO PARALLEL action",
+  "tasks": [
+ {
+      "id": "sleep_1",
+      "description": "sleep_1",
+      "action": "SLEEP",
+      "seconds": 5
+    },
+ {
+      "id": "sleep_2",
+      "description": "sleep_2",
+      "action": "SLEEP",
+      "seconds": 5
+    }    
+  ]
+}

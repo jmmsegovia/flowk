@@ -1,0 +1,978 @@
+{
+  "definitions": {
+    "task": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "enum": ["SSH"]
+        },
+        "connection": {
+          "$ref": "#/definitions/sshConnection"
+        },
+        "sftp": {
+          "$ref": "#/definitions/sshSftpOptions"
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "SSH"
+              }
+            },
+            "required": ["action"]
+          },
+          "then": {
+            "properties": {
+              "steps": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "#/definitions/sshStep"
+                }
+              }
+            },
+            "required": [
+              "id",
+              "action",
+              "connection",
+              "steps"
+            ]
+          }
+        }
+      ]
+    },
+    "sshConnection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "address",
+        "username",
+        "auth"
+      ],
+      "properties": {
+        "network": {
+          "type": "string",
+          "minLength": 1
+        },
+        "address": {
+          "type": "string",
+          "minLength": 1
+        },
+        "username": {
+          "type": "string",
+          "minLength": 1
+        },
+        "auth": {
+          "$ref": "#/definitions/sshAuth"
+        },
+        "timeoutSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "keepAliveSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "hostKey": {
+          "$ref": "#/definitions/sshHostKey"
+        },
+        "clientVersion": {
+          "type": "string"
+        },
+        "preferredCiphers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "sshAuth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method"],
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": [
+            "password",
+            "private_key",
+            "private-key",
+            "keyfile",
+            "private_key_with_passphrase"
+          ]
+        },
+        "password": {
+          "type": "string"
+        },
+        "privateKey": {
+          "type": "string"
+        },
+        "privateKeyPEM": {
+          "type": "string"
+        },
+        "privateKeyPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "passphrase": {
+          "type": "string"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "method": {
+                "const": "password"
+              }
+            }
+          },
+          "then": {
+            "required": ["password"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "method": {
+                "enum": [
+                  "private_key",
+                  "private-key",
+                  "keyfile",
+                  "private_key_with_passphrase"
+                ]
+              }
+            }
+          },
+          "then": {
+            "anyOf": [
+              {
+                "required": ["privateKey"]
+              },
+              {
+                "required": ["privateKeyPEM"]
+              },
+              {
+                "required": ["privateKeyPath"]
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "method": {
+                "const": "private_key_with_passphrase"
+              }
+            }
+          },
+          "then": {
+            "required": ["passphrase"]
+          }
+        }
+      ]
+    },
+    "sshHostKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "insecure",
+            "known_hosts"
+          ]
+        },
+        "knownHostsFiles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "inlineEntries": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "known_hosts"
+              }
+            },
+            "required": ["mode"]
+          },
+          "then": {
+            "anyOf": [
+              {
+                "required": ["knownHostsFiles"]
+              },
+              {
+                "required": ["inlineEntries"]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "sshTerminal": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "term": {
+          "type": "string",
+          "minLength": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "modes": {
+          "type": "object",
+          "patternProperties": {
+            ".+": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "sshSftpOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maxConcurrentRequestsPerFile": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxPacket": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "concurrentReads": {
+          "type": "boolean"
+        },
+        "concurrentWrites": {
+          "type": "boolean"
+        },
+        "useFstat": {
+          "type": "boolean"
+        }
+      }
+    },
+    "sshStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operation"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "operation": {
+          "type": "string",
+          "enum": [
+            "RUN_COMMAND",
+            "RUN_COMMAND_OUTPUT",
+            "RUN_COMMAND_SMART_OUTPUT",
+            "RUN_SCRIPT",
+            "RUN_SCRIPT_OUTPUT",
+            "RUN_SCRIPT_SMART_OUTPUT",
+            "RUN_SCRIPT_FILE",
+            "RUN_SCRIPT_FILE_OUTPUT",
+            "RUN_SCRIPT_FILE_SMART_OUTPUT",
+            "EXECUTE_SHELL",
+            "SFTP"
+          ]
+        },
+        "commands": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "append": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "stdout": {
+          "type": "string"
+        },
+        "stderr": {
+          "type": "string"
+        },
+        "allowedExitCodes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "script": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requestPty": {
+          "type": "boolean"
+        },
+        "terminal": {
+          "$ref": "#/definitions/sshTerminal"
+        },
+        "input": {
+          "type": "string"
+        },
+        "captureStdout": {
+          "type": "boolean"
+        },
+        "captureStderr": {
+          "type": "boolean"
+        },
+        "method": {
+          "type": "string",
+          "enum": [
+            "CHMOD",
+            "CHOWN",
+            "CHTIMES",
+            "CREATE",
+            "DOWNLOAD",
+            "GETWD",
+            "GLOB",
+            "LINK",
+            "LSTAT",
+            "MKDIR",
+            "MKDIR_ALL",
+            "OPEN",
+            "OPEN_FILE",
+            "POSIX_RENAME",
+            "READ_DIR",
+            "READ_FILE",
+            "READ_LINK",
+            "REAL_PATH",
+            "REMOVE",
+            "REMOVE_DIRECTORY",
+            "RENAME",
+            "STAT",
+            "STAT_VFS",
+            "SYMLINK",
+            "TRUNCATE",
+            "UPLOAD",
+            "WAIT",
+            "WALK",
+            "WRITE_FILE"
+          ]
+        },
+        "params": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "enum": [
+                  "RUN_COMMAND",
+                  "RUN_COMMAND_OUTPUT",
+                  "RUN_COMMAND_SMART_OUTPUT"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": ["commands"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "enum": [
+                  "RUN_SCRIPT",
+                  "RUN_SCRIPT_OUTPUT",
+                  "RUN_SCRIPT_SMART_OUTPUT"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": ["script"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "enum": [
+                  "RUN_SCRIPT_FILE",
+                  "RUN_SCRIPT_FILE_OUTPUT",
+                  "RUN_SCRIPT_FILE_SMART_OUTPUT"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": ["path"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "SFTP"
+              }
+            }
+          },
+          "then": {
+            "required": ["method"],
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "method": {
+                      "const": "CHMOD"
+                    }
+                  },
+                  "required": ["method"]
+                },
+                "then": {
+                  "required": ["params"],
+                  "properties": {
+                    "params": {
+                      "$ref": "#/definitions/sftpPathMode"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "method": {
+                      "const": "CHOWN"
+                    }
+                  },
+                  "required": ["method"]
+                },
+                "then": {
+                  "required": ["params"],
+                  "properties": {
+                    "params": {
+                      "$ref": "#/definitions/sftpPathUIDGID"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "method": {
+                      "const": "CHTIMES"
+                    }
+                  },
+                  "required": ["method"]
+                },
+                "then": {
+                  "required": ["params"],
+                  "properties": {
+                    "params": {
+                      "$ref": "#/definitions/sftpPathTimes"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "method": {
+                      "const": "CREATE"
+                    }
+                  },
+                  "required": ["method"]
+                },
+                "then": {
+                  "required": ["params"],
+                  "properties": {
+                    "params": {
+                      "$ref": "#/definitions/sftpCreate"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "method": {
+                      "const": "DOWNLOAD"
+                    }
+                  },
+                  "required": ["method"]
+                },
+                "then": {
+                  "required": ["params"],
+                  "properties": {
+                    "params": {
+                      "$ref": "#/definitions/sftpTransfer"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "method": {
+                      "const": "GLOB"
+                    }
+                  },
+                  "required": ["method"]
+                },
+                "then": {
+                  "required": ["params"],
+                  "properties": {
+                    "params": {
+                      "$ref": "#/definitions/sftpGlob"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "method": {
+                      "enum": [
+                        "LINK",
+                        "POSIX_RENAME",
+                        "RENAME",
+                        "SYMLINK"
+                      ]
+                    }
+                  },
+                  "required": ["method"]
+                },
+                "then": {
+                  "required": ["params"],
+                  "properties": {
+                    "params": {
+                      "$ref": "#/definitions/sftpOldNew"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "method": {
+                      "enum": [
+                        "LSTAT",
+                        "MKDIR",
+                        "MKDIR_ALL",
+                        "OPEN",
+                        "READ_DIR",
+                        "READ_FILE",
+                        "READ_LINK",
+                        "REAL_PATH",
+                        "REMOVE",
+                        "REMOVE_DIRECTORY",
+                        "STAT",
+                        "STAT_VFS"
+                      ]
+                    }
+                  },
+                  "required": ["method"]
+                },
+                "then": {
+                  "required": ["params"],
+                  "properties": {
+                    "params": {
+                      "$ref": "#/definitions/sftpPath"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "method": {
+                      "const": "OPEN"
+                    }
+                  },
+                  "required": ["method"]
+                },
+                "then": {
+                  "properties": {
+                    "params": {
+                      "$ref": "#/definitions/sftpOpen"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "method": {
+                      "const": "OPEN_FILE"
+                    }
+                  },
+                  "required": ["method"]
+                },
+                "then": {
+                  "required": ["params"],
+                  "properties": {
+                    "params": {
+                      "$ref": "#/definitions/sftpOpenFile"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "method": {
+                      "const": "READ_DIR"
+                    }
+                  },
+                  "required": ["method"]
+                },
+                "then": {
+                  "properties": {
+                    "params": {
+                      "$ref": "#/definitions/sftpPath"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "method": {
+                      "const": "TRUNCATE"
+                    }
+                  },
+                  "required": ["method"]
+                },
+                "then": {
+                  "required": ["params"],
+                  "properties": {
+                    "params": {
+                      "$ref": "#/definitions/sftpTruncate"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "method": {
+                      "const": "UPLOAD"
+                    }
+                  },
+                  "required": ["method"]
+                },
+                "then": {
+                  "required": ["params"],
+                  "properties": {
+                    "params": {
+                      "$ref": "#/definitions/sftpTransfer"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "method": {
+                      "const": "WALK"
+                    }
+                  },
+                  "required": ["method"]
+                },
+                "then": {
+                  "required": ["params"],
+                  "properties": {
+                    "params": {
+                      "$ref": "#/definitions/sftpWalk"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "method": {
+                      "const": "WRITE_FILE"
+                    }
+                  },
+                  "required": ["method"]
+                },
+                "then": {
+                  "required": ["params"],
+                  "properties": {
+                    "params": {
+                      "$ref": "#/definitions/sftpWriteFile"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "sftpPath": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["path"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "sftpPathMode": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/sftpPath"
+        },
+        {
+          "type": "object",
+          "required": ["mode"],
+          "properties": {
+            "mode": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "sftpPathUIDGID": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/sftpPath"
+        },
+        {
+          "type": "object",
+          "required": [
+            "uid",
+            "gid"
+          ],
+          "properties": {
+            "uid": {
+              "type": ["integer", "string"]
+            },
+            "gid": {
+              "type": ["integer", "string"]
+            }
+          }
+        }
+      ]
+    },
+    "sftpPathTimes": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/sftpPath"
+        },
+        {
+          "type": "object",
+          "required": [
+            "atime",
+            "mtime"
+          ],
+          "properties": {
+            "atime": {
+              "type": "string",
+              "minLength": 1
+            },
+            "mtime": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "sftpCreate": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/sftpPath"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "content": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "sftpTransfer": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "remotePath",
+        "localPath"
+      ],
+      "properties": {
+        "remotePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "localPath": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "sftpGlob": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["pattern"],
+      "properties": {
+        "pattern": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "sftpOldNew": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "old",
+        "new"
+      ],
+      "properties": {
+        "old": {
+          "type": "string",
+          "minLength": 1
+        },
+        "new": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "sftpOpen": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/sftpPath"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "stat",
+                "read"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "sftpOpenFile": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/sftpPath"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "flags": {
+              "type": ["integer", "string", "array"],
+              "items": {
+                "type": ["integer", "string"],
+                "minLength": 1
+              }
+            },
+            "write": {
+              "type": "string"
+            },
+            "read": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "sftpTruncate": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/sftpPath"
+        },
+        {
+          "type": "object",
+          "required": ["size"],
+          "properties": {
+            "size": {
+              "type": ["integer", "string"]
+            }
+          }
+        }
+      ]
+    },
+    "sftpWalk": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["root"],
+      "properties": {
+        "root": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "sftpWriteFile": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/sftpPath"
+        },
+        {
+          "type": "object",
+          "required": ["content"],
+          "properties": {
+            "content": {
+              "type": "string"
+            },
+            "mode": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,302 @@
+{
+  "id": "subflows.demo_musicbrainz_artist_asserts",
+  "description": "Query MusicBrainz and validate the artist payload with rich assertions.",
+  "tasks": [
+    {
+      "id": "vars.musicbrainz_request",
+      "description": "Configure the artist parameters to query",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "overwrite": true,
+      "vars": [
+        {
+          "name": "artist_id",
+          "type": "string",
+          "value": "084308bd-1654-436f-ba03-df6697104e19"
+        },
+        {
+          "name": "base_url",
+          "type": "string",
+          "value": "https://musicbrainz.org/ws/2/artist"
+        }
+      ]
+    },
+    {
+      "id": "get_artist",
+      "description": "Query the artist in MusicBrainz",
+      "action": "HTTP_REQUEST",
+      "protocol": "HTTPS",
+      "method": "GET",
+      "url": "${base_url}/${artist_id}?fmt=json",
+      "headers": {
+        "Accept": "application/json"
+      }
+    },
+    {
+      "id": "parallel.musicbrainz_validations",
+      "description": "Run all MusicBrainz validations in parallel",
+      "action": "PARALLEL",
+      "fail_fast": false,
+      "merge_strategy": "last_write_wins",
+      "merge_order": [
+        "assert_response_basics",
+        "assert_lengths_and_nulls",
+        "assert_country_codes",
+        "assert_extended_validators"
+      ],
+      "tasks": [
+        {
+          "id": "assert_response_basics",
+          "description": "Validate status and main response fields",
+          "action": "EVALUATE",
+          "if_conditions": [
+            {
+              "left": "${from.task:get_artist.result$.response.status_code}",
+              "operation": "=",
+              "right": 200
+            },
+            {
+              "left": "${from.task:get_artist.resultType}",
+              "operation": "=",
+              "right": "json"
+            },
+            {
+              "left": "${from.task:get_artist.result$.response.body.name}",
+              "operation": "=",
+              "right": "Green Day"
+            },
+            {
+              "left": "${from.task:get_artist.result$.response.body.country}",
+              "operation": "=",
+              "right": "US"
+            },
+            {
+              "left": "${from.task:get_artist.result$.response.body.country.length()}",
+              "operation": "=",
+              "right": 2
+            },
+            {
+              "left": "${from.task:get_artist.result$.response.body['life-span'].begin}",
+              "operation": "=",
+              "right": "1989"
+            },
+            {
+              "left": "${from.task:get_artist.result$.response.body['begin-area']['sort-name']}",
+              "operation": "=",
+              "right": "Berkeley"
+            },
+            {
+              "left": "${from.task:get_artist.result$.response.body.isnis.length()}",
+              "operation": "=",
+              "right": 1
+            }
+          ],
+          "then": {
+            "continue": "Basic validation OK"
+          },
+          "else": {
+            "exit": "Failure in basic validations"
+          }
+        },
+        {
+          "id": "assert_lengths_and_nulls",
+          "description": "Validate lengths, nulls, and boolean flags",
+          "action": "EVALUATE",
+          "if_conditions": [
+            {
+              "left": "${from.task:get_artist.result$.response.body.isnis.length()}",
+              "operation": ">=",
+              "right": 1
+            },
+            {
+              "left": "${from.task:get_artist.result$.response.body.isnis.length()}",
+              "operation": "<=",
+              "right": 3
+            },
+            {
+              "left": "${from.task:get_artist.result$.response.body.name.length()}",
+              "operation": ">=",
+              "right": 5
+            },
+            {
+              "left": "${from.task:get_artist.result$.response.body.name.length()}",
+              "operation": "<=",
+              "right": 10
+            },
+            {
+              "left": "${from.task:get_artist.result$.response.body.ipis.length()}",
+              "operation": "=",
+              "right": 0
+            },
+            {
+              "left": "${from.task:get_artist.result$.response.body.disambiguation.length()}",
+              "operation": "=",
+              "right": 0
+            },
+            {
+              "left": "${from.task:get_artist.result$.response.body.gender}",
+              "operation": "=",
+              "right": null
+            },
+            {
+              "left": "${from.task:get_artist.result$.response.body['life-span'].ended}",
+              "operation": "=",
+              "right": false
+            }
+          ],
+          "then": {
+            "continue": "Length and null validations OK"
+          },
+          "else": {
+            "exit": "Failure in length/null validations"
+          }
+        },
+        {
+          "id": "assert_country_codes",
+          "description": "Validate ISO codes in the area",
+          "action": "EVALUATE",
+          "if_conditions": [
+            {
+              "left": "${from.task:get_artist.result$.response.body.area['iso-3166-1-codes'][?(@ == 'US')]}",
+              "operation": "=",
+              "right": "US"
+            },
+            {
+              "left": "${from.task:get_artist.result$.response.body.area['iso-3166-1-codes'][?(@ == 'IT')]}",
+              "operation": "=",
+              "right": []
+            }
+          ],
+          "then": {
+            "continue": "ISO codes validation OK"
+          },
+          "else": {
+            "exit": "Failure in ISO codes validation"
+          }
+        },
+        {
+          "id": "assert_extended_validators",
+          "description": "Additional validations supported by new operators",
+          "action": "EVALUATE",
+          "if_conditions": [
+            {
+              "left": "${from.task:get_artist.result$.response.status_code}",
+              "operation": "!=",
+              "right": 400
+            },
+            {
+              "left": "${from.task:get_artist.result$.response.body.name}",
+              "operation": "STARTS_WITH",
+              "right": "Green"
+            },
+            {
+              "left": "${from.task:get_artist.result$.response.body.name}",
+              "operation": "ENDS_WITH",
+              "right": "Day"
+            },
+            {
+              "left": "${from.task:get_artist.result$.response.body.country}",
+              "operation": "IN",
+              "right": [
+                "US",
+                "UK"
+              ]
+            },
+            {
+              "left": "${from.task:get_artist.result$.response.body.country}",
+              "operation": "NOT_IN",
+              "right": [
+                "IT",
+                "FR",
+                "ES"
+              ]
+            },
+            {
+              "left": "${from.task:get_artist.result$.response.body.name}",
+              "operation": "CONTAINS",
+              "right": "Day"
+            },
+            {
+              "left": "${from.task:get_artist.result$.response.body.name}",
+              "operation": "NOT_CONTAINS",
+              "right": "Sfera"
+            },
+            {
+              "left": "${from.task:get_artist.result$.response.body.area['iso-3166-1-codes']}",
+              "operation": "CONTAINS",
+              "right": "US"
+            },
+            {
+              "left": "${from.task:get_artist.result$.response.body.area['iso-3166-1-codes']}",
+              "operation": "NOT_CONTAINS",
+              "right": "IT"
+            },
+            {
+              "left": "${from.task:get_artist.result$.response.body.country}",
+              "operation": "MATCHES",
+              "right": "^U[S|K]$"
+            }
+          ],
+          "then": {
+            "continue": "Extended validation OK"
+          },
+          "else": {
+            "exit": "Failure in extended validations"
+          }
+        }
+      ]
+    },
+    {
+      "id": "vars.musicbrainz_summary",
+      "description": "Capture summary values for downstream demo reporting",
+      "action": "VARIABLES",
+      "scope": "flow",
+      "vars": [
+        {
+          "name": "demo_musicbrainz_artist",
+          "type": "string",
+          "value": "${from.task:get_artist.result$.response.body.name}"
+        },
+        {
+          "name": "demo_musicbrainz_country",
+          "type": "string",
+          "value": "${from.task:get_artist.result$.response.body.country}"
+        },
+        {
+          "name": "demo_musicbrainz_begin_year",
+          "type": "string",
+          "value": "${from.task:get_artist.result$.response.body['life-span'].begin}"
+        },
+        {
+          "name": "demo_musicbrainz_begin_area",
+          "type": "string",
+          "value": "${from.task:get_artist.result$.response.body['begin-area']['sort-name']}"
+        },
+        {
+          "name": "demo_musicbrainz_summary",
+          "type": "string",
+          "value": "${from.task:get_artist.result$.response.body.name} (${from.task:get_artist.result$.response.body.country}) validated with ${from.task:get_artist.result$.response.body.isnis.length()} ISNI entry."
+        }
+      ]
+    },
+    {
+      "id": "print.musicbrainz_summary",
+      "description": "Print the MusicBrainz summary values",
+      "action": "PRINT",
+      "entries": [
+        {
+          "message": "MusicBrainz artist",
+          "variable": "demo_musicbrainz_artist"
+        },
+        {
+          "message": "MusicBrainz country",
+          "variable": "demo_musicbrainz_country"
+        },
+        {
+          "message": "MusicBrainz summary",
+          "variable": "demo_musicbrainz_summary"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "id": "variables_arithmetic_demo_with_subflows",
+  "description": "Sample flow that demonstrates the arithmetic operations available in VARIABLES",
+  "imports": [
+    "./subflows/declare_and_print_vars_subflow.json",
+    "./subflows/variable_operations_subflow.json",
+    "./subflows/print_final_result_subflow.json"
+  ],
+  "tasks": []
+}

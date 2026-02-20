@@ -1,0 +1,13 @@
+{
+  "id": "flow_k8_helm_mysql_cicd",
+  "description": "CI/CD-style flow that installs MySQL with Helm, scales an app deployment down/up, waits for readiness, and runs MySQL queries over a Kubernetes port-forward.",
+  "imports": [
+    "./subflows/k8_cicd_vars.json",
+    "./subflows/k8_helm_repos.json",
+    "./subflows/k8_mysql_install.json",
+    "./subflows/k8_app_rollout.json",
+    "./subflows/k8_mysql_queries.json",
+    "./subflows/k8_cleanup.json"
+  ],
+  "tasks": []
+}

@@ -1,0 +1,24 @@
+{
+  "id": "telnet_demo",
+  "description": "Sample Telnet session that logs into a device and captures the version banner.",
+  "imports": [
+    "./subflows/docker_telnet_local.json"
+  ],
+  "tasks": [
+    {
+      "id": "telnet.session",
+      "action": "TELNET",
+      "host": "localhost",
+      "port": 4101,
+      "timeoutSeconds": 12,
+      "readTimeoutSeconds": 6,
+      "lineEnding": "CRLF",
+      "steps": [
+        { "connect": {} },
+        { "send": { "data": "echo Version 1.2.3" } },
+        { "expect": { "pattern": "Version\\s+([0-9.]+)", "capture": "version" } },
+        { "close": {} }
+      ]
+    }
+  ]
+}

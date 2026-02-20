@@ -1,0 +1,43 @@
+{
+  "id": "ssh_command_demo",
+  "description": "Demonstrates running remote commands over SSH",
+  "imports": [
+    "./subflows/docker_ssh_local.json"
+  ],
+  "tasks": [
+    {
+      "id": "ssh.command.basic",
+      "description": "Check system information over SSH",
+      "action": "SSH",
+      "connection": {
+        "address": "127.0.0.1:2222",
+        "username": "root",
+        "auth": {
+          "method": "password",
+          "password": "flowkpass"
+        },
+        "hostKey": {
+          "mode": "insecure"
+        }
+      },
+      "steps": [
+        {
+          "id": "ssh.uname",
+          "operation": "RUN_COMMAND_SMART_OUTPUT",
+          "commands": [
+            "uname -a"
+          ]
+        },
+        {
+          "id": "ssh.disk_usage",
+          "operation": "RUN_COMMAND",
+          "commands": [
+            "df -h"
+          ],
+          "stdout": "capture",
+          "allowedExitCodes": [1]
+        }
+      ]
+    }
+  ]
+}

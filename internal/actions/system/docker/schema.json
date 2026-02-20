@@ -1,0 +1,230 @@
+{
+  "definitions": {
+    "task": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "enum": ["DOCKER"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Task description"
+        },
+        "operation": {
+          "type": "string",
+          "description": "Docker operation to execute"
+        },
+        "image": {
+          "type": "string",
+          "description": "Image name or ID used for image and run operations."
+        },
+        "container": {
+          "type": "string",
+          "description": "Container name or ID used for container operations."
+        },
+        "name": {
+          "type": "string",
+          "description": "Container name for run operations."
+        },
+        "volume": {
+          "type": "string",
+          "description": "Volume name used for volume operations."
+        },
+        "network": {
+          "type": "string",
+          "description": "Network name used for network operations."
+        },
+        "env": {
+          "type": "array",
+          "description": "Environment variables for run operations, in NAME=VALUE format.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "ports": {
+          "type": "array",
+          "description": "Port mappings for run operations, e.g. 8080:80.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "interactive": {
+          "type": "boolean",
+          "description": "When true, pass -i to docker run/exec."
+        },
+        "tty": {
+          "type": "boolean",
+          "description": "When true, pass -t to docker run/exec."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "DOCKER"
+              }
+            },
+            "required": ["action"]
+          },
+          "then": {
+            "required": ["id", "action", "operation"],
+            "properties": {
+              "operation": {
+                "enum": [
+                  "IMAGES_LIST",
+                  "IMAGE_PULL",
+                  "IMAGE_REMOVE",
+                  "IMAGE_PRUNE",
+                  "CONTAINERS_LIST",
+                  "CONTAINERS_LIST_ALL",
+                  "CONTAINER_RUN",
+                  "CONTAINER_START",
+                  "CONTAINER_STOP",
+                  "CONTAINER_RESTART",
+                  "CONTAINER_REMOVE",
+                  "CONTAINER_PRUNE",
+                  "CONTAINER_LOGS",
+                  "CONTAINER_EXEC",
+                  "VOLUME_LIST",
+                  "VOLUME_CREATE",
+                  "VOLUME_INSPECT",
+                  "VOLUME_REMOVE",
+                  "VOLUME_PRUNE",
+                  "NETWORK_LIST",
+                  "NETWORK_CREATE",
+                  "NETWORK_INSPECT",
+                  "NETWORK_REMOVE"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "DOCKER"
+              },
+              "operation": {
+                "enum": ["IMAGE_PULL", "IMAGE_REMOVE", "CONTAINER_RUN"]
+              }
+            },
+            "required": ["action", "operation"]
+          },
+          "then": {
+            "required": ["image"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "DOCKER"
+              },
+              "operation": {
+                "enum": [
+                  "CONTAINER_START",
+                  "CONTAINER_STOP",
+                  "CONTAINER_RESTART",
+                  "CONTAINER_REMOVE",
+                  "CONTAINER_LOGS"
+                ]
+              }
+            },
+            "required": ["action", "operation"]
+          },
+          "then": {
+            "required": ["container"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "DOCKER"
+              },
+              "operation": {
+                "const": "CONTAINER_EXEC"
+              }
+            },
+            "required": ["action", "operation"]
+          },
+          "then": {
+            "required": ["container", "command"],
+            "properties": {
+              "command": {
+                "type": "array",
+                "description": "Command arguments for exec operations.",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "DOCKER"
+              },
+              "operation": {
+                "const": "CONTAINER_RUN"
+              }
+            },
+            "required": ["action", "operation"]
+          },
+          "then": {
+            "properties": {
+              "command": {
+                "type": "array",
+                "description": "Command arguments for run operations.",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "DOCKER"
+              },
+              "operation": {
+                "enum": ["VOLUME_CREATE", "VOLUME_INSPECT", "VOLUME_REMOVE"]
+              }
+            },
+            "required": ["action", "operation"]
+          },
+          "then": {
+            "required": ["volume"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "DOCKER"
+              },
+              "operation": {
+                "enum": ["NETWORK_CREATE", "NETWORK_INSPECT", "NETWORK_REMOVE"]
+              }
+            },
+            "required": ["action", "operation"]
+          },
+          "then": {
+            "required": ["network"]
+          }
+        }
+      ]
+    }
+  }
+}

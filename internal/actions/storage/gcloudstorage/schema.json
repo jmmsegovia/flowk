@@ -1,0 +1,196 @@
+{
+  "definitions": {
+    "task": {
+      "properties": {
+        "action": {
+          "enum": ["GCLOUD_STORAGE"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Task description"
+        },
+        "copy": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "source": {
+              "type": "string",
+              "minLength": 1
+            },
+            "destination": {
+              "type": "string",
+              "minLength": 1
+            },
+            "recursive": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "source",
+            "destination"
+          ]
+        },
+        "move": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "source": {
+              "type": "string",
+              "minLength": 1
+            },
+            "destination": {
+              "type": "string",
+              "minLength": 1
+            },
+            "recursive": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "source",
+            "destination"
+          ]
+        },
+        "remove": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "targets": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "recursive": {
+              "type": "boolean"
+            }
+          },
+          "required": ["targets"]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "GCLOUD_STORAGE"
+              }
+            },
+            "required": ["action"]
+          },
+          "then": {
+            "required": [
+              "id",
+              "action",
+              "operation"
+            ],
+            "properties": {
+              "operation": {
+                "type": "string",
+                "enum": [
+                  "CP",
+                  "MV",
+                  "RM",
+                  "LS",
+                  "AUTH_INFO"
+                ]
+              },
+              "list": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "target": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "recursive": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["target"]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "GCLOUD_STORAGE"
+              },
+              "operation": {
+                "const": "CP"
+              }
+            },
+            "required": [
+              "action",
+              "operation"
+            ]
+          },
+          "then": {
+            "required": ["copy"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "GCLOUD_STORAGE"
+              },
+              "operation": {
+                "const": "MV"
+              }
+            },
+            "required": [
+              "action",
+              "operation"
+            ]
+          },
+          "then": {
+            "required": ["move"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "GCLOUD_STORAGE"
+              },
+              "operation": {
+                "const": "RM"
+              }
+            },
+            "required": [
+              "action",
+              "operation"
+            ]
+          },
+          "then": {
+            "required": ["remove"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "GCLOUD_STORAGE"
+              },
+              "operation": {
+                "const": "LS"
+              }
+            },
+            "required": [
+              "action",
+              "operation"
+            ]
+          },
+          "then": {
+            "required": ["list"]
+          }
+        }
+      ]
+    }
+  }
+}

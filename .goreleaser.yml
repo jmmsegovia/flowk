@@ -1,0 +1,107 @@
+version: 2
+
+project_name: "flowk"
+
+before:
+  hooks:
+    - go mod download
+    - sh -c "cd ui && npm ci"
+    - sh -c "cd ui && rm -rf dist-release && npm run build -- --outDir dist-release"
+
+release:
+  prerelease: false
+
+env:
+  - CGO_ENABLED=0
+
+builds:
+  - id: linux
+    main: ./cmd/flowk
+    binary: "{{ if (index .Env \"PROJECT_NAME\") }}{{ index .Env \"PROJECT_NAME\" }}{{ else }}{{ .ProjectName }}{{ end }}"
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+      - arm
+      - ppc64le
+      - s390x
+    goarm:
+      - 7
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version=v{{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+
+  - id: freebsd
+    main: ./cmd/flowk
+    binary: "{{ if (index .Env \"PROJECT_NAME\") }}{{ index .Env \"PROJECT_NAME\" }}{{ else }}{{ .ProjectName }}{{ end }}"
+    goos:
+      - freebsd
+    goarch:
+      - amd64
+      - arm64
+    goarm:
+      - 7
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version=v{{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+
+  - id: osx
+    main: ./cmd/flowk
+    binary: "{{ if (index .Env \"PROJECT_NAME\") }}{{ index .Env \"PROJECT_NAME\" }}{{ else }}{{ .ProjectName }}{{ end }}"
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version=v{{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+
+  - id: windows
+    main: ./cmd/flowk
+    binary: "{{ if (index .Env \"PROJECT_NAME\") }}{{ index .Env \"PROJECT_NAME\" }}{{ else }}{{ .ProjectName }}{{ end }}"
+    goos:
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version=v{{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+
+archives:
+  - name_template: >-
+      {{- if (index .Env "PROJECT_NAME") }}{{ index .Env "PROJECT_NAME" }}{{ else }}{{ .ProjectName }}{{ end }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}amd64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format_overrides:
+      - goos: windows
+        formats: ["zip"]
+    files:
+      - src: LICENSE
+      - src: README.md
+      - src: flows/**
+        dst: flows
+      - src: ui/dist-release/**
+        dst: ui/dist
+
+checksum:
+  name_template: "checksums.sha256"
+
+snapshot:
+  version_template: "{{ .Tag }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
