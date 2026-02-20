@@ -63,9 +63,7 @@ There are 50+ example flows under `flows/`. Some examples require external servi
 ```
 _Open your browser at `http://localhost:8080` (default port)_
 
-<div align="center">
-  <img src="brand/screenshot2.jpg" alt="FlowK UI - task details and logs" width="100%"/>
-</div>
+![Image](https://github.com/user-attachments/assets/0aa86b4c-5afb-4b60-9e0e-cbcb152087bf)
 
 ### Build (Optional)
 
