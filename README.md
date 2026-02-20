@@ -3,6 +3,18 @@
 
   <p><strong>The Modular Automation Engine for DevOps, CI/CD & Quality Engineering</strong></p>
 
+  <p>
+    <a href="https://github.com/jmmsegovia/flowk/actions/workflows/ci.yml">
+      <img alt="Automated tests" src="https://img.shields.io/github/actions/workflow/status/jmmsegovia/flowk/ci.yml?branch=main&label=Automated%20tests"/>
+    </a>
+    <a href="https://github.com/jmmsegovia/flowk/actions/workflows/ci.yml">
+      <img alt="Linter (go vet)" src="https://img.shields.io/github/actions/workflow/status/jmmsegovia/flowk/ci.yml?branch=main&label=Linter%20(go%20vet)"/>
+    </a>
+    <a href="https://github.com/jmmsegovia/flowk/actions/workflows/release.yml">
+      <img alt="Cross-platform build" src="https://img.shields.io/github/actions/workflow/status/jmmsegovia/flowk/release.yml?label=Cross-platform%20build"/>
+    </a>
+  </p>  
+
   <a href="./docs/getting-started.md">Getting Started</a> •
   <a href="./docs/core-concepts.md">Core Concepts</a> •
   <a href="./docs/actions/README.md">Actions Reference</a> •
@@ -80,6 +92,12 @@ Requires Go 1.24.3 or newer.
 Get the latest prebuilt binaries from [GitHub Releases](https://github.com/jmmsegovia/flowk/releases).
 
 Download the archive for your OS/architecture and run the `flowk` binary inside.
+
+## Quality Checks
+
+- **Automated Tests**: `go test ./...`, `go test -race ./...`, and coverage collection in CI.
+- **Linter**: `go vet ./...` runs on every push and pull request.
+- **Cross-Platform Build**: GoReleaser builds for Linux, macOS, Windows, and FreeBSD on release tags.
 
 ## Documentation
 
