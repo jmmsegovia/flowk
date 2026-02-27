@@ -171,8 +171,6 @@ func validateConfig(cfg Config) error {
 	default:
 		return fmt.Errorf("secrets.provider %q is not supported", cfg.Secrets.Provider)
 	}
-
-	return nil
 }
 
 func writeDefaultConfig(path string, cfg Config) error {
