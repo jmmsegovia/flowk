@@ -22,6 +22,10 @@
     "description": {
       "type": "string"
     },
+    "is_subflow": {
+      "type": "boolean",
+      "description": "Marks this definition as a subflow so discovery UIs can hide it from top-level flow lists."
+    },
     "imports": {
       "type": "array",
       "items": {

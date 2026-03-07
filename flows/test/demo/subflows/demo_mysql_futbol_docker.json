@@ -353,5 +353,6 @@
       "operation": "CONTAINER_REMOVE",
       "container": "${mysql_container_name}"
     }
-  ]
+  ],
+  "is_subflow": true
 }

@@ -37,6 +37,9 @@ func TestLoadCreatesConfigOnFirstRun(t *testing.T) {
 	if !strings.Contains(content, DefaultUIDir) {
 		t.Fatalf("expected config to include default ui dir, got: %s", content)
 	}
+	if !strings.Contains(content, "flows_dir: "+DefaultFlowsDir) {
+		t.Fatalf("expected config to include default flows_dir, got: %s", content)
+	}
 }
 
 func TestLoadFromUsesProvidedPath(t *testing.T) {
@@ -65,7 +68,28 @@ func TestLoadFromUsesProvidedPath(t *testing.T) {
 	if result.Config.UI.Dir != "ui/custom" {
 		t.Fatalf("ui dir = %q, want ui/custom", result.Config.UI.Dir)
 	}
+	if result.Config.FlowsDir != DefaultFlowsDir {
+		t.Fatalf("flows_dir = %q, want %q", result.Config.FlowsDir, DefaultFlowsDir)
+	}
 }
+
+func TestLoadFromParsesFlowsDir(t *testing.T) {
+	customDir := t.TempDir()
+	customPath := filepath.Join(customDir, "flows.yaml")
+	content := "ui:\n  host: 127.0.0.1\n  port: 8080\n  dir: ui/dist\nflows_dir: ./my-flows\n"
+	if err := os.WriteFile(customPath, []byte(content), 0o600); err != nil {
+		t.Fatalf("writing custom config: %v", err)
+	}
+
+	result, err := LoadFrom(customPath)
+	if err != nil {
+		t.Fatalf("LoadFrom() error = %v", err)
+	}
+	if result.Config.FlowsDir != "./my-flows" {
+		t.Fatalf("flows_dir = %q, want ./my-flows", result.Config.FlowsDir)
+	}
+}
+
 
 func TestLoadFromWithVaultSecrets(t *testing.T) {
 	customDir := t.TempDir()

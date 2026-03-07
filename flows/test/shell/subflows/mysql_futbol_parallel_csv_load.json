@@ -37,5 +37,6 @@
       "file_path": "${csv_file_host}",
       "has_header": true
     }
-  ]
+  ],
+  "is_subflow": true
 }

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import {
-  fetchFlowDefinition,
+  fetchAvailableFlows,
   fetchSchema,
   createEventSource,
   FlowEvent,
@@ -8,14 +8,14 @@ import {
   requestFlowStop,
   requestStopAtTask,
   requestCloseFlow,
-  uploadFlowDefinition
+  openFlowDefinition
 } from '../api/client';
 import { CombinedSchema, FlowDefinition, FlowImport, TaskDefinition } from '../types/flow';
 import { extractForChildren, extractParallelChildren, isSubtaskId } from '../utils/flowUtils';
 
 interface FlowState {
   flows: FlowDefinition[];
-  importedFlowIds: string[];
+  flowsRootDir?: string;
   activeFlow?: FlowDefinition;
   importsTree: FlowImport[];
   schema?: CombinedSchema;
@@ -29,12 +29,10 @@ interface FlowState {
   loadError: string | null;
   loadFlows: () => Promise<void>;
   selectFlow: (id?: string) => void;
-  openFlow: (id: string) => Promise<void>;
+  openFlow: (id: string, sourceName?: string) => Promise<void>;
   updateTask: (taskId: string, patch: Partial<TaskDefinition>) => void;
   addTask: (task: TaskDefinition) => void;
   setSchema: (schema: CombinedSchema) => void;
-  importFlow: (flow: FlowDefinition) => void;
-  removeImportedFlow: (id: string) => void;
   connectToRunStream: () => () => void;
   triggerRun: () => Promise<void>;
   triggerTaskRun: (taskId: string) => Promise<void>;
@@ -50,67 +48,6 @@ type ModifyResult = {
   tasks: TaskDefinition[];
   changed: boolean;
 };
-
-const STORAGE_KEY = 'flowk.importedFlows';
-
-const isFlowDefinition = (value: unknown): value is FlowDefinition => {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-  const candidate = value as FlowDefinition;
-  return typeof candidate.id === 'string' && Array.isArray(candidate.tasks);
-};
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null;
-
-const readPersistedFlows = (): FlowDefinition[] => {
-  if (typeof window === 'undefined') {
-    return [];
-  }
-
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return [];
-    }
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-    return parsed.filter(isFlowDefinition);
-  } catch (error) {
-    console.warn('No se pudieron cargar los flows importados.', error);
-    return [];
-  }
-};
-
-const writePersistedFlows = (flows: FlowDefinition[]) => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(flows));
-  } catch (error) {
-    console.warn('No se pudieron guardar los flows importados.', error);
-  }
-};
-
-const runtimeTaskKeys = new Set([
-  'status',
-  'startedAt',
-  'finishedAt',
-  'durationSeconds',
-  'success',
-  'result',
-  'resultType',
-  'logs',
-  'flowId',
-  'raw',
-  'fields',
-  'children'
-]);
 
 const resetRuntimeState = (task: TaskDefinition): TaskDefinition => {
   const base: TaskDefinition = {
@@ -150,50 +87,6 @@ const resetFlowRuntime = (flow: FlowDefinition): FlowDefinition => ({
   name: flow.name ?? flow.id,
   tasks: flow.tasks.map(resetRuntimeState)
 });
-
-const sanitizeTaskForUpload = (task: TaskDefinition): Record<string, unknown> => {
-  const sanitized: Record<string, unknown> = {};
-
-  Object.entries(task).forEach(([key, value]) => {
-    if (runtimeTaskKeys.has(key) || value === undefined) {
-      return;
-    }
-    if (key === 'tasks' && Array.isArray(value)) {
-      sanitized.tasks = value.map((item) =>
-        isRecord(item) ? sanitizeTaskForUpload(item as TaskDefinition) : item
-      );
-      return;
-    }
-    sanitized[key] = value;
-  });
-
-  if (sanitized.name === undefined) {
-    if (typeof task.name === 'string' && task.name.trim()) {
-      sanitized.name = task.name;
-    } else if (typeof task.id === 'string' && task.id.trim()) {
-      sanitized.name = task.id;
-    }
-  }
-
-  return sanitized;
-};
-
-const sanitizeFlowForUpload = (flow: FlowDefinition): FlowDefinition => ({
-  id: flow.id,
-  name: flow.name ?? flow.id,
-  description: flow.description,
-  imports: flow.imports ?? [],
-  tasks: flow.tasks
-    .filter((task) => !task.flowId || task.flowId === flow.id)
-    .map((task) => sanitizeTaskForUpload(task) as TaskDefinition)
-});
-
-const mergeFlows = (baseFlows: FlowDefinition[], importedFlows: FlowDefinition[]): FlowDefinition[] => {
-  const byId = new Map<string, FlowDefinition>();
-  baseFlows.forEach((flow) => byId.set(flow.id, flow));
-  importedFlows.forEach((flow) => byId.set(flow.id, flow));
-  return Array.from(byId.values());
-};
 
 const collectFirstTaskIds = (tasks: TaskDefinition[]): Map<string, string> => {
   const map = new Map<string, string>();
@@ -535,7 +428,7 @@ const normalizeStatus = (type: FlowEvent['type'], snapshotStatus?: string, succe
 
 const useFlowStore = create<FlowState>((set, get) => ({
   flows: [],
-  importedFlowIds: [],
+  flowsRootDir: undefined,
   activeFlow: undefined,
   importsTree: [],
   schema: undefined,
@@ -548,34 +441,32 @@ const useFlowStore = create<FlowState>((set, get) => ({
   focusTaskId: undefined,
   loadError: null,
   loadFlows: async () => {
-    const [flow, schema] = await Promise.all([fetchFlowDefinition(), fetchSchema()]);
-    const importedFlows = readPersistedFlows();
-    const flows = mergeFlows(flow ? [resetFlowRuntime(flow)] : [], importedFlows.map(resetFlowRuntime));
-    set({
-      flows,
-      importedFlowIds: importedFlows.map((item) => item.id),
-      schema
-    });
+    try {
+      const [{ flows, rootDir }, schema] = await Promise.all([fetchAvailableFlows(), fetchSchema()]);
+      set({
+        flows: flows.map(resetFlowRuntime),
+        flowsRootDir: rootDir,
+        schema,
+        loadError: null
+      });
+    } catch (error) {
+      let message = 'Unknown error loading flows';
+      if (error instanceof Error && error.message.trim()) {
+        message = error.message;
+      } else if (typeof error === 'string' && error.trim()) {
+        message = error;
+      }
+      set({
+        flows: [],
+        flowsRootDir: undefined,
+        loadError: message
+      });
+    }
   },
   selectFlow: (id?: string) => {
     if (!id) {
-      const active = get().activeFlow;
-      if (active) {
-        const reset = resetFlowRuntime(active);
-        const persistedFlows = readPersistedFlows();
-        const nextPersisted = persistedFlows.map((item) => (item.id === reset.id ? reset : item));
-        writePersistedFlows(nextPersisted);
-        set((state) => ({
-          activeFlow: undefined,
-          importsTree: [],
-          focusTaskId: undefined,
-          stopAtTaskId: undefined,
-          flows: state.flows.map((item) => (item.id === reset.id ? reset : item))
-        }));
-        void requestCloseFlow(reset.id);
-      } else {
-        set({ activeFlow: undefined, importsTree: [], focusTaskId: undefined, stopAtTaskId: undefined });
-      }
+      set({ activeFlow: undefined, importsTree: [], focusTaskId: undefined, stopAtTaskId: undefined });
+      void requestCloseFlow();
       void requestStopAtTask('');
       return;
     }
@@ -591,18 +482,23 @@ const useFlowStore = create<FlowState>((set, get) => ({
       void requestStopAtTask('');
     }
   },
-  openFlow: async (id: string) => {
-    const flow = get().flows.find((item) => item.id === id);
+  openFlow: async (id: string, sourceName?: string) => {
+    const normalizedSource = sourceName?.trim();
+    const flow = get().flows.find((item) =>
+      normalizedSource ? item.sourceName === normalizedSource : item.id === id
+    );
     if (!flow) {
       set({ activeFlow: undefined, importsTree: [], focusTaskId: undefined, stopAtTaskId: undefined });
+      void requestCloseFlow();
       void requestStopAtTask('');
       return;
     }
 
     const resetFlow = resetFlowRuntime(flow);
-    const sourceFileName = flow.sourceFileName;
     set((state) => {
-      const updatedFlows = state.flows.map((item) => (item.id === resetFlow.id ? resetFlow : item));
+      const updatedFlows = state.flows.map((item) =>
+        item.sourceName === resetFlow.sourceName ? resetFlow : item
+      );
       const flowNameById = buildFlowNameLookup(updatedFlows);
       return {
         activeFlow: resetFlow,
@@ -616,13 +512,16 @@ const useFlowStore = create<FlowState>((set, get) => ({
     void requestStopAtTask('');
 
     try {
-      const payload = JSON.stringify(sanitizeFlowForUpload(resetFlow));
-      const uploaded = await uploadFlowDefinition(payload, sourceFileName);
-      const normalized = resetFlowRuntime(uploaded);
-      const isPersisted = get().importedFlowIds.includes(uploaded.id);
+      if (!resetFlow.sourceName) {
+        throw new Error('Flow source path is missing');
+      }
+      const openedFlow = await openFlowDefinition(resetFlow.sourceName);
+      const normalized = resetFlowRuntime(openedFlow);
 
       set((state) => {
-        const updatedFlows = state.flows.map((item) => (item.id === normalized.id ? normalized : item));
+        const updatedFlows = state.flows.map((item) =>
+          item.sourceName === normalized.sourceName ? { ...item, ...normalized } : item
+        );
         const flowNameById = buildFlowNameLookup(updatedFlows);
         return {
           activeFlow: normalized,
@@ -630,16 +529,6 @@ const useFlowStore = create<FlowState>((set, get) => ({
           importsTree: buildImportNodes(normalized, flowNameById)
         };
       });
-
-      if (isPersisted) {
-        const persistedFlows = readPersistedFlows();
-        const persistedIndex = persistedFlows.findIndex((item) => item.id === uploaded.id);
-        const nextPersisted =
-          persistedIndex >= 0
-            ? persistedFlows.map((item) => (item.id === normalized.id ? normalized : item))
-            : [...persistedFlows, normalized];
-        writePersistedFlows(nextPersisted);
-      }
     } catch (error) {
       console.warn('No se pudo activar el flujo en el backend.', error);
       let errorMessage = 'Unknown error loading flow';
@@ -689,51 +578,6 @@ const useFlowStore = create<FlowState>((set, get) => ({
     }));
   },
   setSchema: (schema: CombinedSchema) => set({ schema }),
-  importFlow: (flow: FlowDefinition) => {
-    const normalized = resetFlowRuntime(flow);
-    const persistedFlows = readPersistedFlows();
-    const persistedIndex = persistedFlows.findIndex((item) => item.id === normalized.id);
-    const nextPersisted =
-      persistedIndex >= 0
-        ? persistedFlows.map((item) => (item.id === normalized.id ? normalized : item))
-        : [...persistedFlows, normalized];
-    writePersistedFlows(nextPersisted);
-
-    set((state) => {
-      const existingIndex = state.flows.findIndex((item) => item.id === normalized.id);
-      const flows =
-        existingIndex >= 0
-          ? state.flows.map((item) => (item.id === normalized.id ? normalized : item))
-          : [...state.flows, normalized];
-
-      return {
-        flows,
-        importedFlowIds: nextPersisted.map((item) => item.id)
-      };
-    });
-  },
-  removeImportedFlow: (id: string) => {
-    const persistedFlows = readPersistedFlows();
-    if (!persistedFlows.some((flow) => flow.id === id)) {
-      return;
-    }
-    const nextPersisted = persistedFlows.filter((flow) => flow.id !== id);
-    writePersistedFlows(nextPersisted);
-
-    // Notify backend to close the flow
-    void requestCloseFlow(id);
-
-    set((state) => {
-      const isActiveRemoved = state.activeFlow?.id === id;
-      return {
-        flows: state.flows.filter((flow) => flow.id !== id),
-        importedFlowIds: state.importedFlowIds.filter((flowId) => flowId !== id),
-        activeFlow: isActiveRemoved ? undefined : state.activeFlow,
-        importsTree: isActiveRemoved ? [] : state.importsTree,
-        focusTaskId: isActiveRemoved ? undefined : state.focusTaskId
-      };
-    });
-  },
   connectToRunStream: () => {
     const eventSource = createEventSource();
     const handleFlowLoaded = (event: MessageEvent<string>) => {

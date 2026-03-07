@@ -16,6 +16,12 @@ func main() {
 			"version":     "1.0.0",
 		},
 		"paths": map[string]any{
+			"/api/flows": map[string]any{
+				"get": map[string]any{"summary": "List available flow definitions", "responses": map[string]any{"200": map[string]any{"description": "Available flows"}}},
+			},
+			"/api/flows/open": map[string]any{
+				"post": map[string]any{"summary": "Open flow by source path", "responses": map[string]any{"200": map[string]any{"description": "Opened flow"}}},
+			},
 			"/api/flow": map[string]any{
 				"get":  map[string]any{"summary": "Get active flow definition", "responses": map[string]any{"200": map[string]any{"description": "Flow definition"}, "204": map[string]any{"description": "No flow loaded"}}},
 				"post": map[string]any{"summary": "Upload/import flow definition", "responses": map[string]any{"200": map[string]any{"description": "Imported flow"}}},

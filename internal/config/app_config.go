@@ -17,9 +17,10 @@ const (
 )
 
 const (
-	DefaultUIHost = "127.0.0.1"
-	DefaultUIPort = 8080
-	DefaultUIDir  = "ui/dist"
+	DefaultUIHost   = "127.0.0.1"
+	DefaultUIPort   = 8080
+	DefaultUIDir    = "ui/dist"
+	DefaultFlowsDir = "./flows"
 )
 
 // UIConfig controls how the embedded UI server is exposed.
@@ -31,8 +32,9 @@ type UIConfig struct {
 
 // Config captures the user-facing configuration stored in config.yaml.
 type Config struct {
-	UI      UIConfig      `yaml:"ui"`
-	Secrets SecretsConfig `yaml:"secrets"`
+	UI       UIConfig      `yaml:"ui"`
+	FlowsDir string        `yaml:"flows_dir"`
+	Secrets  SecretsConfig `yaml:"secrets"`
 }
 
 // SecretsConfig controls native secret provider integration.
@@ -64,7 +66,8 @@ func DefaultConfig() Config {
 			Port: DefaultUIPort,
 			Dir:  DefaultUIDir,
 		},
-		Secrets: SecretsConfig{Provider: "none"},
+		FlowsDir: DefaultFlowsDir,
+		Secrets:  SecretsConfig{Provider: "none"},
 	}
 }
 
@@ -140,6 +143,11 @@ func applyDefaults(cfg Config) Config {
 	cfg.UI.Dir = strings.TrimSpace(cfg.UI.Dir)
 	if cfg.UI.Dir == "" {
 		cfg.UI.Dir = DefaultUIDir
+	}
+
+	cfg.FlowsDir = strings.TrimSpace(cfg.FlowsDir)
+	if cfg.FlowsDir == "" {
+		cfg.FlowsDir = DefaultFlowsDir
 	}
 
 	cfg.Secrets.Provider = strings.TrimSpace(cfg.Secrets.Provider)

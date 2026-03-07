@@ -1,0 +1,5 @@
+* text=auto
+
+# Shell scripts must keep LF, otherwise shebang fails on Unix-like envs.
+*.sh text eol=lf
+.gitattributes text eol=lf

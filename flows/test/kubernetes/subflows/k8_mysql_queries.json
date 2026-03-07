@@ -61,5 +61,6 @@
       "operation": "STOP_PORT_FORWARD",
       "local_port": 3307
     }
-  ]
+  ],
+  "is_subflow": true
 }

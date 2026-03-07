@@ -61,5 +61,6 @@
       "max_wait_seconds": 180,
       "poll_interval_seconds": 5
     }
-  ]
+  ],
+  "is_subflow": true
 }

@@ -33,5 +33,6 @@
         }
       ]
     }
-  ]
+  ],
+  "is_subflow": true
 }

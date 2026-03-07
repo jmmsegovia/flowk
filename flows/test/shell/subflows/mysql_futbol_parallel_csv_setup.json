@@ -160,5 +160,6 @@
       "database": "flowk_db",
       "command": "TRUNCATE TABLE football_players"
     }
-  ]
+  ],
+  "is_subflow": true
 }

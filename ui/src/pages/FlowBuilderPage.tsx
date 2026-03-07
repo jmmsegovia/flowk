@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -50,6 +50,8 @@ const findTaskById = (tasks: TaskDefinition[], taskId: string): TaskDefinition |
 
 function FlowBuilderPage() {
   const { flowId } = useParams();
+  const [searchParams] = useSearchParams();
+  const sourceName = searchParams.get('source') ?? undefined;
   const openFlow = useFlowStore((state) => state.openFlow);
   const loadFlows = useFlowStore((state) => state.loadFlows);
   const connectToRunStream = useFlowStore((state) => state.connectToRunStream);
@@ -106,12 +108,6 @@ function FlowBuilderPage() {
   );
 
   useEffect(() => {
-    if (flowsCount === 0) {
-      void loadFlows();
-    }
-  }, [flowsCount, loadFlows]);
-
-  useEffect(() => {
     let isActive = true;
 
     const load = async () => {
@@ -119,7 +115,10 @@ function FlowBuilderPage() {
       if (!flowId) {
         return;
       }
-      await openFlow(flowId);
+      if (flowsCount === 0) {
+        await loadFlows();
+      }
+      await openFlow(flowId, sourceName);
       if (!isActive) {
         return;
       }
@@ -139,7 +138,7 @@ function FlowBuilderPage() {
     return () => {
       isActive = false;
     };
-  }, [flowId, openFlow]);
+  }, [flowId, openFlow, sourceName, flowsCount, loadFlows]);
 
   useEffect(() => {
     setSelectedTask(activeFlow?.tasks[0]);

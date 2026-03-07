@@ -1,84 +1,51 @@
-import { ChangeEvent, useCallback, useEffect, useRef } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import useFlowStore from '../state/flowStore';
-import { uploadFlowDefinition } from '../api/client';
-import useToastStore from '../state/toastStore';
+import { FlowDefinition } from '../types/flow';
+
+type FlowGroup = {
+  dir: string;
+  flows: FlowDefinition[];
+};
+
+const sortBySource = (left: FlowDefinition, right: FlowDefinition): number => {
+  const leftPath = left.sourceName ?? left.id;
+  const rightPath = right.sourceName ?? right.id;
+  return leftPath.localeCompare(rightPath);
+};
 
 function FlowListPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const flows = useFlowStore((state) => state.flows);
+  const flowsRootDir = useFlowStore((state) => state.flowsRootDir);
+  const loadError = useFlowStore((state) => state.loadError);
   const loadFlows = useFlowStore((state) => state.loadFlows);
   const selectFlow = useFlowStore((state) => state.selectFlow);
-  const importedFlowIds = useFlowStore((state) => state.importedFlowIds);
-  const removeImportedFlow = useFlowStore((state) => state.removeImportedFlow);
-  const importFlow = useFlowStore((state) => state.importFlow);
-  const { t } = useTranslation();
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const addToast = useToastStore((state) => state.addToast);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    loadFlows();
+    void loadFlows();
     selectFlow(); // Clear active flow and subflows menu
   }, [loadFlows, selectFlow]);
 
-  const handleImportClick = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
+  const groupedFlows = useMemo<FlowGroup[]>(() => {
+    const groups = new Map<string, FlowDefinition[]>();
+    flows.forEach((flow) => {
+      const dir = flow.sourceDir?.trim() || '.';
+      const current = groups.get(dir) ?? [];
+      current.push(flow);
+      groups.set(dir, current);
+    });
 
-  const handleFileChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      if (!file) {
-        return;
-      }
-
-      const reader = new FileReader();
-
-      reader.onload = async (loadEvent) => {
-        try {
-          const contents = loadEvent.target?.result;
-          if (typeof contents !== 'string') {
-            throw new Error(t('appShell.feedback.invalidFile'));
-          }
-
-          const importedFlow = await uploadFlowDefinition(contents, file.name);
-          importFlow({ ...importedFlow, sourceFileName: file.name });
-          addToast({
-            type: 'success',
-            message: t('appShell.feedback.success', { flowId: importedFlow.id }),
-            timeoutMs: 3500
-          });
-        } catch (error) {
-          const message =
-            error instanceof Error
-              ? error.message
-              : t('appShell.feedback.unknown');
-          console.error('Failed to import flow. Details:', message);
-          console.error(error);
-          addToast({
-            type: 'error',
-            message: t('appShell.feedback.error', { message }),
-            timeoutMs: 6000
-          });
-        } finally {
-          event.target.value = '';
-        }
-      };
-
-      reader.onerror = () => {
-        addToast({
-          type: 'error',
-          message: t('appShell.feedback.readError'),
-          timeoutMs: 6000
-        });
-        event.target.value = '';
-      };
-
-      reader.readAsText(file);
-    },
-    [importFlow, t]
-  );
+    return Array.from(groups.entries())
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([dir, items]) => ({
+        dir,
+        flows: [...items].sort(sortBySource)
+      }));
+  }, [flows]);
 
   return (
     <div>
@@ -86,50 +53,91 @@ function FlowListPage() {
         <div>
           <h2>{t('flowList.title')}</h2>
           <p className="flow-list__description">{t('flowList.description')}</p>
-        </div>
-        <div className="flow-list__actions">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/json"
-            onChange={handleFileChange}
-            style={{ display: 'none' }}
-          />
-          <button className="button button--secondary" onClick={handleImportClick}>
-            {t('buttons.importFlow')}
-          </button>
+          {loadError ? (
+            <p className="flow-list__error">{t('flowList.loadError', { message: loadError })}</p>
+          ) : null}
         </div>
       </div>
-      <div className="flow-list">
-        {flows.length === 0 ? (
-          <p className="flow-list__empty">{t('flowList.empty')}</p>
-        ) : (
-          flows.map((flow) => (
-            <article key={flow.id} className="flow-card">
-              <header>
-                <h3>{flow.id}</h3>
-                <p className="flow-card__description">{flow.description}</p>
-              </header>
-              <div className="flow-card__meta">
-                <span>{t('flowList.taskCount', { count: flow.tasks.length })}</span>
-              </div>
-              <div className="flow-card__footer">
-                {importedFlowIds.includes(flow.id) ? (
-                  <button
-                    className="button button--danger"
-                    onClick={() => removeImportedFlow(flow.id)}
-                  >
-                    {t('buttons.delete')}
-                  </button>
-                ) : null}
-                <button className="button" onClick={() => navigate(`/flows/${flow.id}`)}>
-                  {t('buttons.open')}
+      {groupedFlows.length === 0 ? (
+        <p className="flow-list__empty">
+          {t('flowList.empty', { path: flowsRootDir ?? t('flowList.unknownPath') })}
+        </p>
+      ) : (
+        <div className="flow-groups">
+          {groupedFlows.map((group, index) => {
+            const isExpanded = expandedGroups.has(group.dir);
+            const groupPathLabel = group.dir === '.' ? t('flowList.rootGroup') : group.dir;
+            return (
+              <section key={group.dir} className="flow-group">
+                <button
+                  type="button"
+                  className={`flow-group__header ${isExpanded ? 'flow-group__header--expanded' : ''}`}
+                  aria-expanded={isExpanded}
+                  aria-controls={`flow-group-panel-${index}`}
+                  aria-label={
+                    isExpanded
+                      ? t('flowList.collapseGroup', { path: groupPathLabel })
+                      : t('flowList.expandGroup', { path: groupPathLabel })
+                  }
+                  onClick={() =>
+                    setExpandedGroups((previous) => {
+                      const next = new Set(previous);
+                      if (next.has(group.dir)) {
+                        next.delete(group.dir);
+                      } else {
+                        next.add(group.dir);
+                      }
+                      return next;
+                    })
+                  }
+                >
+                  <span className="flow-group__title">
+                    <span className="flow-group__chevron" aria-hidden>
+                      {isExpanded ? '-' : '+'}
+                    </span>
+                    <span className="flow-group__path">{groupPathLabel}</span>
+                  </span>
+                  <span className="flow-group__count">
+                    {t('flowList.groupCount', { count: group.flows.length })}
+                  </span>
                 </button>
-              </div>
-            </article>
-          ))
-        )}
-      </div>
+                {isExpanded ? (
+                  <div id={`flow-group-panel-${index}`} className="flow-list">
+                    {group.flows.map((flow) => (
+                      <article key={`${flow.sourceName ?? flow.id}`} className="flow-card">
+                        <header>
+                          <h3>{flow.name ?? flow.id}</h3>
+                          <p className="flow-card__description">{flow.description}</p>
+                        </header>
+                        <div className="flow-card__meta">
+                          <span>{t('flowList.taskCount', { count: flow.tasks.length })}</span>
+                          <span className="flow-card__path">{flow.sourceName ?? flow.id}</span>
+                        </div>
+                        <div className="flow-card__footer">
+                          <button
+                            className="button"
+                            onClick={() =>
+                              navigate(
+                                `/flows/${encodeURIComponent(flow.id)}${
+                                  flow.sourceName
+                                    ? `?source=${encodeURIComponent(flow.sourceName)}`
+                                    : ''
+                                }`
+                              )
+                            }
+                          >
+                            {t('buttons.open')}
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                ) : null}
+              </section>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

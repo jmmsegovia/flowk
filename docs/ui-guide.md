@@ -7,10 +7,12 @@ FlowK includes an optional web interface that provides a rich visual experience 
 To start the UI, include the `-serve-ui` flag when running a flow:
 
 ```bash
-./bin/flowk run -serve-ui -flow ./path/to/flow.json
+./bin/flowk run -serve-ui
 ```
 
 By default, the UI is accessible at `http://localhost:8080`.
+The **Available flows** page scans the configured `flows_dir` recursively and groups flows by folder path.
+Imported subflows are hidden from that top-level list, and files marked with `"is_subflow": true` are also excluded.
 
 ## Features
 

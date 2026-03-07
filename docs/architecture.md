@@ -189,7 +189,7 @@ Configuration is file-based with optional CLI override:
 - If config file is missing, defaults are generated automatically.
 
 Current built-in config domain:
-- `ui.host`, `ui.port`, `ui.dir`.
+- `ui.host`, `ui.port`, `ui.dir`, `flows_dir`.
 
 Environment separation:
 - No first-class `dev/staging/prod` profiles in code.

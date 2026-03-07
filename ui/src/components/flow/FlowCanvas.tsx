@@ -141,7 +141,7 @@ const FlowCanvas = forwardRef<FlowCanvasHandle, FlowCanvasProps>(function FlowCa
     setLayoutSnapshot(null);
     setLayoutSeed(0);
     const load = async () => {
-      const snapshot = await fetchLayoutSnapshot(flow.id, flow.sourceFileName);
+      const snapshot = await fetchLayoutSnapshot(flow.id, flow.sourceName);
       if (!isActive || !snapshot) {
         return;
       }
@@ -154,7 +154,7 @@ const FlowCanvas = forwardRef<FlowCanvasHandle, FlowCanvasProps>(function FlowCa
     return () => {
       isActive = false;
     };
-  }, [flow.id, flow.sourceFileName]);
+  }, [flow.id, flow.sourceName]);
 
   const buildNodes = useCallback(
     (
@@ -700,8 +700,8 @@ const FlowCanvas = forwardRef<FlowCanvasHandle, FlowCanvasProps>(function FlowCa
 
   const saveLayoutNow = useCallback(() => {
     const snapshot = buildLayoutSnapshot(nodesRef.current);
-    void saveLayoutSnapshot(flow.id, flow.sourceFileName, snapshot);
-  }, [buildLayoutSnapshot, flow.id, flow.sourceFileName]);
+    void saveLayoutSnapshot(flow.id, flow.sourceName, snapshot);
+  }, [buildLayoutSnapshot, flow.id, flow.sourceName]);
 
   const scheduleLayoutSave = useCallback(() => {
     if (typeof window === 'undefined') {
@@ -719,14 +719,14 @@ const FlowCanvas = forwardRef<FlowCanvasHandle, FlowCanvasProps>(function FlowCa
   }, [autoSaveEnabled, saveLayoutNow]);
 
   const resetLayoutNow = useCallback(() => {
-    void deleteLayoutSnapshot(flow.id, flow.sourceFileName);
+    void deleteLayoutSnapshot(flow.id, flow.sourceName);
     setLayoutSnapshot(null);
     setLayoutSeed((seed) => seed + 1);
     const instance = rfInstanceRef.current;
     if (instance) {
       instance.fitView({ padding: 0.2 });
     }
-  }, [flow.id, flow.sourceFileName]);
+  }, [flow.id, flow.sourceName]);
 
   useImperativeHandle(
     ref,

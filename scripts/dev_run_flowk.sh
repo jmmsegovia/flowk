@@ -55,6 +55,7 @@ ui:
   host: "${FLOWK_HOST}"
   port: ${FLOWK_PORT}
   dir: "tmp/ui-dev"
+flows_dir: "${ROOT_DIR}/flows"
 EOF
 
 echo "Starting FlowK UI server (API at http://${FLOWK_HOST}:${FLOWK_PORT}, UI at ${UI_DEV_URL})..."

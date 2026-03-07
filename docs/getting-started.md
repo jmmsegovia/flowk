@@ -47,10 +47,13 @@ Useful for CI/CD pipelines or scripting where no visual interface is needed.
 Starts a local web server to visualize the flow execution in real-time.
 
 ```bash
-./bin/flowk run -serve-ui -flow ./path/to/your/flow.json
+./bin/flowk run -serve-ui
 ```
 
 Access the UI at: `http://localhost:8080` (default)
+
+The UI scans `flows_dir` (recursive) and shows all discovered flow JSON files in **Available flows**.  
+You can still pass `-flow` to pre-load and run a specific file on startup.
 
 ## Configuration
 
@@ -66,7 +69,7 @@ ui:
   host: "0.0.0.0"
   port: 8080
   dir: "ui/dist" # Path to built UI assets
-
+flows_dir: "./flows" # Flow discovery root for the UI (recursive)
 secrets:
   provider: "vault" # "none" or "vault"
   vault:

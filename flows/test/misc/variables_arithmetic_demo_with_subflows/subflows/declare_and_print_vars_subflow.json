@@ -67,5 +67,6 @@
         }
       ]
     }
-  ]
+  ],
+  "is_subflow": true
 }

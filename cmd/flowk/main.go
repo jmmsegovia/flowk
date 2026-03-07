@@ -51,6 +51,7 @@ type runArguments struct {
 	serveUI       bool
 	uiAddress     string
 	uiDir         string
+	flowsDir      string
 	configPath    string
 }
 
@@ -265,6 +266,7 @@ func parseRunArgs(args []string) (runArguments, error) {
 	}
 	cfg.uiAddress = fmt.Sprintf("%s:%d", configResult.Config.UI.Host, configResult.Config.UI.Port)
 	cfg.uiDir = configResult.Config.UI.Dir
+	cfg.flowsDir = configResult.Config.FlowsDir
 	cfg.configPath = configResult.Path
 
 	resolver, err := secrets.BuildResolver(secrets.Config{
@@ -289,7 +291,7 @@ func generalHelpMessage(program string) string {
 }
 
 func runHelpMessage(program string) string {
-	return fmt.Sprintf("Usage:\n  %[1]s run [-flow=<action-flow>] [-begin-from-task=<task-id>] [-run-task=<task-id>] [-run-subtask=<task-id>] [-run-flow=<flow-id>] [options]\n\nFlags:\n  -flow              Path to the action flow to execute (required unless -serve-ui is used without an initial run).\n  -begin-from-task   Start executing the flow from the provided task identifier.\n  -run-task          Execute only the specified task identifier.\n  -run-subtask       Execute only the specified subtask identifier (nested in PARALLEL/FOR).\n  -run-flow          Execute the specified nested flow identifier.\n  -validate-only     Validate the flow definition and exit without running tasks.\n  -serve-ui          Start an HTTP server to serve the visual UI and live execution events (UI host/port/dir are read from config.yaml).\n  -config            Path to a config.yaml file that overrides the XDG config location.", program)
+	return fmt.Sprintf("Usage:\n  %[1]s run [-flow=<action-flow>] [-begin-from-task=<task-id>] [-run-task=<task-id>] [-run-subtask=<task-id>] [-run-flow=<flow-id>] [options]\n\nFlags:\n  -flow              Path to the action flow to execute (required unless -serve-ui is used without an initial run).\n  -begin-from-task   Start executing the flow from the provided task identifier.\n  -run-task          Execute only the specified task identifier.\n  -run-subtask       Execute only the specified subtask identifier (nested in PARALLEL/FOR).\n  -run-flow          Execute the specified nested flow identifier.\n  -validate-only     Validate the flow definition and exit without running tasks.\n  -serve-ui          Start an HTTP server to serve the visual UI and live execution events (UI host/port/dir/flows_dir are read from config.yaml).\n  -config            Path to a config.yaml file that overrides the XDG config location.", program)
 }
 
 func formatFlowDuration(d time.Duration) string {
@@ -348,6 +350,7 @@ func runFlowWithOptions(ctx context.Context, args runArguments) (err error) {
 	server, err := uiserver.NewServer(uiserver.Config{
 		Address:       args.uiAddress,
 		FlowPath:      args.flowPath,
+		FlowRootDir:   args.flowsDir,
 		Hub:           hub,
 		StaticDir:     staticDir,
 		Runner:        flowRunner,
@@ -556,5 +559,6 @@ func printInfo(out io.Writer) error {
 	fmt.Fprintf(out, "UI host: %s\n", configResult.Config.UI.Host)
 	fmt.Fprintf(out, "UI port: %d\n", configResult.Config.UI.Port)
 	fmt.Fprintf(out, "UI dir: %s\n", configResult.Config.UI.Dir)
+	fmt.Fprintf(out, "Flows dir: %s\n", configResult.Config.FlowsDir)
 	return nil
 }

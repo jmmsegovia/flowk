@@ -50,6 +50,26 @@
         "summary": "Get flow notes markdown"
       }
     },
+    "/api/flows": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Available flows"
+          }
+        },
+        "summary": "List available flow definitions"
+      }
+    },
+    "/api/flows/open": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Opened flow"
+          }
+        },
+        "summary": "Open flow by source path"
+      }
+    },
     "/api/openapi.json": {
       "get": {
         "responses": {

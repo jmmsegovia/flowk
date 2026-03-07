@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -23,6 +24,7 @@ import (
 
 const maxFlowUploadSize = 5 * 1024 * 1024
 const maxFlowNotesSize = 1 * 1024 * 1024
+const defaultFlowRootDir = "./flows"
 
 var errImportLocated = errors.New("flow import located")
 var errImportNotFound = errors.New("flow import not found")
@@ -30,6 +32,7 @@ var errImportNotFound = errors.New("flow import not found")
 type Config struct {
 	Address       string
 	FlowPath      string
+	FlowRootDir   string
 	Hub           *EventHub
 	StaticDir     string
 	Runner        *FlowRunner
@@ -43,6 +46,7 @@ type Server struct {
 	runner           *FlowRunner
 	flowMu           sync.RWMutex
 	flowPath         string
+	flowRootDir      string
 	uploadedFlowPath string
 	uploadedFlowName string
 	uploadDir        string
@@ -83,6 +87,14 @@ func NewServer(cfg Config) (*Server, error) {
 		fsRoot:      workingDir,
 		importCache: make(map[string]string),
 	}
+	flowRootDir := strings.TrimSpace(cfg.FlowRootDir)
+	if flowRootDir == "" {
+		flowRootDir = defaultFlowRootDir
+	}
+	if !filepath.IsAbs(flowRootDir) {
+		flowRootDir = filepath.Join(workingDir, flowRootDir)
+	}
+	srv.flowRootDir = filepath.Clean(flowRootDir)
 	srv.layoutDir = resolveLayoutDir(cfg.ConfigPath)
 	srv.setActiveFlowPath(strings.TrimSpace(cfg.FlowPath), false, "")
 	srv.registerRoutes()
@@ -91,6 +103,8 @@ func NewServer(cfg Config) (*Server, error) {
 }
 
 func (s *Server) registerRoutes() {
+	s.engine.GET("/api/flows", s.handleFlows)
+	s.engine.POST("/api/flows/open", s.handleOpenFlow)
 	s.engine.GET("/api/flow", s.handleFlow)
 	s.engine.GET("/api/flow/notes", s.handleFlowNotes)
 	s.engine.GET("/api/schema", s.handleSchema)
@@ -215,6 +229,53 @@ func (s *Server) handleFlow(c *gin.Context) {
 	}
 
 	response := buildFlowResponse(definition)
+	response = s.withSourceMetadata(response, path)
+	c.JSON(http.StatusOK, response)
+}
+
+func (s *Server) handleFlows(c *gin.Context) {
+	flows, err := s.discoverAvailableFlows()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"flows":   flows,
+		"rootDir": s.flowRootDir,
+	})
+}
+
+func (s *Server) handleOpenFlow(c *gin.Context) {
+	var req struct {
+		SourceName string `json:"sourceName"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid payload: %v", err)})
+		return
+	}
+
+	sourceName := strings.TrimSpace(req.SourceName)
+	if sourceName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "sourceName is required"})
+		return
+	}
+
+	resolvedPath, err := s.resolveFlowPathFromSourceName(sourceName)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	definition, err := flow.LoadDefinition(resolvedPath)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	s.setActiveFlowPath(resolvedPath, false, "")
+	response := buildFlowResponse(definition)
+	response = s.withSourceMetadata(response, resolvedPath)
 	c.JSON(http.StatusOK, response)
 }
 
@@ -589,6 +650,151 @@ func (s *Server) setActiveFlowPath(path string, fromUpload bool, uploadName stri
 	if prevUpload != "" && prevUpload != trimmed {
 		_ = os.Remove(prevUpload)
 	}
+}
+
+func (s *Server) resolveFlowPathFromSourceName(sourceName string) (string, error) {
+	root := strings.TrimSpace(s.flowRootDir)
+	if root == "" {
+		return "", errors.New("flow root directory is not configured")
+	}
+
+	cleanSource := filepath.Clean(filepath.FromSlash(sourceName))
+	if filepath.IsAbs(cleanSource) {
+		return "", fmt.Errorf("sourceName %q must be a relative path", sourceName)
+	}
+
+	target := filepath.Join(root, cleanSource)
+	if err := ensureWithinRoot(root, target); err != nil {
+		return "", err
+	}
+
+	info, err := os.Stat(target)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return "", fmt.Errorf("flow %q was not found", sourceName)
+		}
+		return "", fmt.Errorf("could not access flow %q: %w", sourceName, err)
+	}
+	if info.IsDir() {
+		return "", fmt.Errorf("flow %q is a directory", sourceName)
+	}
+
+	return target, nil
+}
+
+func (s *Server) discoverAvailableFlows() ([]FlowResponse, error) {
+	root := strings.TrimSpace(s.flowRootDir)
+	if root == "" {
+		return nil, errors.New("flow root directory is not configured")
+	}
+
+	info, err := os.Stat(root)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return []FlowResponse{}, nil
+		}
+		return nil, fmt.Errorf("reading flow root directory %q: %w", root, err)
+	}
+	if !info.IsDir() {
+		return nil, fmt.Errorf("flow root directory %q is not a directory", root)
+	}
+
+	type discoveredFlow struct {
+		path     string
+		def      *flow.Definition
+		response FlowResponse
+	}
+
+	var discovered []discoveredFlow
+	importedFlowIDs := make(map[string]struct{})
+
+	var flows []FlowResponse
+	walkErr := filepath.WalkDir(root, func(currentPath string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if entry.IsDir() {
+			return nil
+		}
+		if !strings.EqualFold(filepath.Ext(entry.Name()), ".json") {
+			return nil
+		}
+
+		definition, err := flow.LoadDefinition(currentPath)
+		if err != nil {
+			// Keep listing resilient: malformed/non-flow JSON files are ignored.
+			return nil
+		}
+
+		cleanedPath := filepath.Clean(currentPath)
+		if absolutePath, absErr := filepath.Abs(cleanedPath); absErr == nil {
+			cleanedPath = filepath.Clean(absolutePath)
+		}
+
+		response := buildFlowResponse(definition)
+		response = s.withSourceMetadata(response, cleanedPath)
+		discovered = append(discovered, discoveredFlow{
+			path:     cleanedPath,
+			def:      definition,
+			response: response,
+		})
+
+		for _, importedID := range definition.FlowImports[definition.ID] {
+			trimmedID := strings.TrimSpace(importedID)
+			if trimmedID == "" || trimmedID == definition.ID {
+				continue
+			}
+			importedFlowIDs[trimmedID] = struct{}{}
+		}
+		return nil
+	})
+	if walkErr != nil {
+		return nil, fmt.Errorf("walking flow root directory %q: %w", root, walkErr)
+	}
+
+	for _, item := range discovered {
+		if item.def != nil && item.def.IsSubflow {
+			continue
+		}
+
+		if _, imported := importedFlowIDs[item.response.ID]; imported {
+			continue
+		}
+
+		flows = append(flows, item.response)
+	}
+
+	sort.Slice(flows, func(i, j int) bool {
+		left := flows[i].SourceName
+		right := flows[j].SourceName
+		if left == right {
+			return flows[i].ID < flows[j].ID
+		}
+		return left < right
+	})
+
+	return flows, nil
+}
+
+func (s *Server) withSourceMetadata(response FlowResponse, absPath string) FlowResponse {
+	root := strings.TrimSpace(s.flowRootDir)
+	if root == "" || strings.TrimSpace(absPath) == "" {
+		return response
+	}
+
+	cleanedPath := filepath.Clean(absPath)
+	rel, err := filepath.Rel(root, cleanedPath)
+	if err != nil || strings.HasPrefix(rel, "..") {
+		return response
+	}
+
+	response.SourceName = filepath.ToSlash(rel)
+	dir := filepath.ToSlash(filepath.Dir(rel))
+	if dir == "." {
+		dir = ""
+	}
+	response.SourceDir = dir
+	return response
 }
 
 func (s *Server) storeFlowDefinition(data []byte) (string, *flow.Definition, error) {
@@ -1043,6 +1249,9 @@ type FlowResponse struct {
 	ID          string            `json:"id"`
 	Name        string            `json:"name"`
 	Description string            `json:"description"`
+	IsSubflow   bool              `json:"isSubflow,omitempty"`
+	SourceName  string            `json:"sourceName,omitempty"`
+	SourceDir   string            `json:"sourceDir,omitempty"`
 	Imports     []string          `json:"imports,omitempty"`
 	FlowNames   map[string]string `json:"flowNames,omitempty"`
 	Tasks       []TaskSummary     `json:"tasks"`
@@ -1074,6 +1283,7 @@ func buildFlowResponse(def *flow.Definition) FlowResponse {
 		ID:          def.ID,
 		Name:        def.Name,
 		Description: def.Description,
+		IsSubflow:   def.IsSubflow,
 		Imports:     append([]string(nil), def.Imports...),
 	}
 	if strings.TrimSpace(response.Name) == "" {

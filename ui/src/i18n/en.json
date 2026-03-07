@@ -30,7 +30,7 @@
   },
   "flowBuilder": {
     "noFlowTitle": "No flow selected",
-    "noFlowDescription": "Import a JSON file from the Flows page to start building and running.",
+    "noFlowDescription": "Open a flow from the Flows page to start building and running.",
     "tasksTitle": "Tasks",
     "tabs": {
       "inspector": "Inspector",
@@ -45,9 +45,16 @@
   },
   "flowList": {
     "title": "Available flows",
-    "description": "Select a flow to edit it in the visual builder. You can import JSON files or create new definitions.",
-    "empty": "No flows loaded yet. Use \"Import flow\" to get started.",
-    "taskCount": "{{count}} tasks"
+    "description": "Select a flow to edit it in the visual builder. Flows are discovered recursively from the configured flows directory.",
+    "empty": "No valid flows were found in the configured flows directory: {{path}}.",
+    "loadError": "Error loading flows: {{message}}",
+    "taskCount": "{{count}} tasks",
+    "groupCount": "{{count}} files",
+    "groupCount_plural": "{{count}} files",
+    "rootGroup": "(root)",
+    "unknownPath": "(unknown path)",
+    "expandGroup": "Expand folder {{path}}",
+    "collapseGroup": "Collapse folder {{path}}"
   },
   "actionGuide": {
     "title": "Actions and operations",

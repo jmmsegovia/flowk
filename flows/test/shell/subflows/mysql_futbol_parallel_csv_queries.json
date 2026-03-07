@@ -72,5 +72,6 @@
         "exit": "Football data loaded from CSV does not match the expected values"
       }
     }
-  ]
+  ],
+  "is_subflow": true
 }

@@ -21,10 +21,12 @@ export interface FlowDefinition {
   id: string;
   name?: string;
   description: string;
+  isSubflow?: boolean;
+  sourceName?: string;
+  sourceDir?: string;
   imports?: string[];
   flowNames?: Record<string, string>;
   tasks: TaskDefinition[];
-  sourceFileName?: string;
 }
 
 export interface FlowImport {
