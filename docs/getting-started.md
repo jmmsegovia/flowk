@@ -69,9 +69,7 @@ ui:
   host: "0.0.0.0"
   port: 8080
   dir: "ui/dist" # Path to built UI assets
-
 flows_dir: "./flows" # Flow discovery root for the UI (recursive)
-
 secrets:
   provider: "vault" # "none" or "vault"
   vault:
