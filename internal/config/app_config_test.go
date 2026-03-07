@@ -90,40 +90,6 @@ func TestLoadFromParsesFlowsDir(t *testing.T) {
 	}
 }
 
-func TestLoadFromWithVaultSecrets(t *testing.T) {
-	customDir := t.TempDir()
-	customPath := filepath.Join(customDir, "vault.yaml")
-	content := "ui:\n  host: 127.0.0.1\n  port: 8080\n  dir: ui/dist\nsecrets:\n  provider: vault\n  vault:\n    address: https://vault.local\n    token: s.test\n    kv_mount: apps\n    kv_prefix: prod\n"
-	if err := os.WriteFile(customPath, []byte(content), 0o600); err != nil {
-		t.Fatalf("writing custom config: %v", err)
-	}
-
-	result, err := LoadFrom(customPath)
-	if err != nil {
-		t.Fatalf("LoadFrom() error = %v", err)
-	}
-
-	if result.Config.Secrets.Provider != "vault" {
-		t.Fatalf("secrets.provider = %q, want vault", result.Config.Secrets.Provider)
-	}
-	if result.Config.Secrets.Vault.Address != "https://vault.local" {
-		t.Fatalf("secrets.vault.address = %q, want https://vault.local", result.Config.Secrets.Vault.Address)
-	}
-}
-
-func TestLoadFromVaultRequiresAddressAndToken(t *testing.T) {
-	customDir := t.TempDir()
-	customPath := filepath.Join(customDir, "invalid-vault.yaml")
-	content := "secrets:\n  provider: vault\n"
-	if err := os.WriteFile(customPath, []byte(content), 0o600); err != nil {
-		t.Fatalf("writing custom config: %v", err)
-	}
-
-	_, err := LoadFrom(customPath)
-	if err == nil {
-		t.Fatal("expected error, got nil")
-	}
-}
 
 func TestLoadFromWithVaultSecrets(t *testing.T) {
 	customDir := t.TempDir()
