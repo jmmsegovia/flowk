@@ -1,5 +1,12 @@
 # Release Notes
 
+## v0.1.3
+
+- Add recursive flow discovery for `-serve-ui` from configurable `flows_dir` (default `./flows`), so the UI can run without requiring `-flow` and browse repository flows by folder path.
+- Add `is_subflow` flow metadata and automatic imported-flow filtering so subflows stay available for execution/imports but are hidden from the top-level **Available flows** list.
+- Extend the UI backend contract/OpenAPI for discovery-based navigation with `GET /api/flows`, `POST /api/flows/open`, and path metadata (`sourceName`, `sourceDir`) for path-aware loading and error feedback.
+- Redesign the **Available flows** page with collapsible folder groups, accessible expand/collapse controls, and localized labels to improve navigation in large flow catalogs.
+
 ## v0.1.2
 
 - Enforce `name` as required in flow/task schemas, propagate it through runtime validation, and render `name`/`flowNames` consistently in UI/API/docs.
