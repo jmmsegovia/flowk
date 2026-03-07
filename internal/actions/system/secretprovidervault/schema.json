@@ -1,0 +1,84 @@
+{
+  "definitions": {
+    "task": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "action": {
+          "enum": ["SECRET_PROVIDER_VAULT"]
+        },
+        "operation": {
+          "type": "string",
+          "description": "Vault operation to execute."
+        },
+        "address": {
+          "type": "string",
+          "description": "Vault base address, e.g. http://127.0.0.1:8200"
+        },
+        "token": {
+          "type": "string",
+          "description": "Vault token sent in X-Vault-Token header"
+        },
+        "kv_mount": {
+          "type": "string",
+          "description": "KV v2 mount path. Defaults to secret."
+        },
+        "path": {
+          "type": "string",
+          "description": "Secret path under the mount for KV operations."
+        },
+        "data": {
+          "type": "object",
+          "description": "Data map written by KV_PUT.",
+          "minProperties": 1,
+          "additionalProperties": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "SECRET_PROVIDER_VAULT"
+              }
+            },
+            "required": ["action"]
+          },
+          "then": {
+            "required": ["id", "action", "operation", "address", "token"],
+            "properties": {
+              "operation": {
+                "enum": ["HEALTH", "KV_PUT", "KV_GET", "KV_LIST", "KV_DELETE"]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": { "const": "SECRET_PROVIDER_VAULT" },
+              "operation": { "const": "KV_PUT" }
+            },
+            "required": ["action", "operation"]
+          },
+          "then": {
+            "required": ["path", "data"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": { "const": "SECRET_PROVIDER_VAULT" },
+              "operation": { "enum": ["KV_GET", "KV_LIST", "KV_DELETE"] }
+            },
+            "required": ["action", "operation"]
+          },
+          "then": {
+            "required": ["path"]
+          }
+        }
+      ]
+    }
+  }
+}

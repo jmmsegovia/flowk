@@ -20,5 +20,6 @@
         "prompt": "consent"
       }
     }
-  ]
+  ],
+  "is_subflow": true
 }

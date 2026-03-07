@@ -26,6 +26,7 @@ import (
 	_ "flowk/internal/actions/storage/gcloudstorage"
 	_ "flowk/internal/actions/system/base64"
 	_ "flowk/internal/actions/system/docker"
+	_ "flowk/internal/actions/system/secretprovidervault"
 	_ "flowk/internal/actions/system/shell"
 	"flowk/internal/flow"
 	"flowk/internal/shared/runcontext"

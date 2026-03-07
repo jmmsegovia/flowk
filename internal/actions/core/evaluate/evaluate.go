@@ -10,6 +10,7 @@ import (
 	"flowk/internal/actions/shared/placeholders"
 	"flowk/internal/flow"
 	"flowk/internal/logging/colors"
+	"flowk/internal/shared/expansion"
 	jsonpathutil "flowk/internal/shared/jsonpathutil"
 )
 
@@ -23,6 +24,7 @@ const (
 var (
 	taskPlaceholderPattern     = regexp.MustCompile(`^(?:\{\{\s*from\.task:([^{}]+)\s*\}\}|\$\{\s*from\.task:([^{}]+)\s*\})$`)
 	variablePlaceholderPattern = regexp.MustCompile(`^\$\{\s*([A-Za-z0-9_.-]+)\s*\}$`)
+	secretPlaceholderPattern   = regexp.MustCompile(`^\$\{\s*secret:[^{}]+\s*\}$`)
 	legacyVariablePattern      = regexp.MustCompile(`^\{\{\s*([A-Za-z0-9_.-]+)\s*\}\}$`)
 )
 
@@ -367,6 +369,14 @@ func resolveStringOperand(target *flow.Task, tasks []flow.Task, variables map[st
 			return nil, fmt.Errorf("placeholder is empty")
 		}
 		return resolveTaskPlaceholder(tasks, expr)
+	}
+
+	if secretPlaceholderPattern.MatchString(trimmed) {
+		resolved, err := expansion.ExpandString(trimmed, nil)
+		if err != nil {
+			return nil, err
+		}
+		return resolved, nil
 	}
 
 	if matches := variablePlaceholderPattern.FindStringSubmatch(trimmed); len(matches) == 2 {

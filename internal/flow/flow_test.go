@@ -296,6 +296,21 @@ func TestLoadDefinitionAllowsEmptyStringEvaluateRight(t *testing.T) {
 	}
 }
 
+
+func TestLoadDefinitionAllowsSecretPlaceholderInEvaluate(t *testing.T) {
+	setupSchemaProvider(t)
+	dir := t.TempDir()
+	path := filepath.Join(dir, "flow.json")
+	content := []byte(`{"description":"test","id":"evaluate.secret","name":"evaluate.secret","tasks":[{"action":"EVALUATE","else":{"exit":"fail"},"id":"eval","if_conditions":[{"left":"${secret:vault:apps/demo#enabled}","operation":"=","right":"true"}],"name":"eval","then":{"continue":"ok"}}]}`)
+	if err := os.WriteFile(path, content, 0o600); err != nil {
+		t.Fatalf("failed to write flow definition: %v", err)
+	}
+
+	if _, err := LoadDefinition(path); err != nil {
+		t.Fatalf("LoadDefinition() error = %v", err)
+	}
+}
+
 func TestLoadDefinitionMergesImportedTasks(t *testing.T) {
 	setupSchemaProvider(t)
 	dir := t.TempDir()

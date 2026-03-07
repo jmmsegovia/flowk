@@ -52,8 +52,30 @@ function TaskInspector({ task }: TaskInspectorProps) {
   const { t } = useTranslation();
 
   const taskDefinitionData = useMemo(() => {
-    // Extract only definition-related fields
-    const { status, success, startedAt, finishedAt, durationSeconds, result, resultType, logs, ...definition } = task;
+    if (task.raw && typeof task.raw === 'object' && !Array.isArray(task.raw)) {
+      return task.raw;
+    }
+
+    // Fallback for older API payloads without `raw`.
+    const {
+      status,
+      success,
+      startedAt,
+      finishedAt,
+      durationSeconds,
+      result,
+      resultType,
+      logs,
+      flowId,
+      fields,
+      raw,
+      ...definition
+    } = task;
+
+    if (typeof definition.description === 'string' && definition.description.trim() === '') {
+      delete definition.description;
+    }
+
     return definition;
   }, [task]);
 

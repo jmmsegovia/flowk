@@ -13,6 +13,7 @@ A **Flow** is the top-level unit of execution in FlowK. It is defined in a JSON 
   "id": "my-payment-flow",
   "name": "my-payment-flow",
   "description": "Processes payments and updates database",
+  "is_subflow": false,
   "imports": [
     "./subflows/payment_gateway.json",
     "./subflows/notifications.json"
@@ -26,6 +27,7 @@ A **Flow** is the top-level unit of execution in FlowK. It is defined in a JSON 
 
 - **id**: Unique identifier for the flow.
 - **name**: Human-friendly name for the flow. Required for flows and subflows.
+- **is_subflow**: Optional boolean flag for subflow definition files. Set it to `true` when the file is not meant to be opened as a top-level flow in the UI.
 - **imports**: List of other flow files to include. This is how subflows are defined. Paths are resolved relative to the main flow file. Imported tasks are prepended in import order.
   For cross-platform compatibility (Linux/macOS/Windows), prefer relative paths like `./subflows/...` and `../shared/...`. Forward slashes are supported on Windows.
 - **tasks**: Ordered array of tasks (including tasks from imported subflows).
@@ -90,6 +92,15 @@ You can access results from previous tasks using `${from.task:TASK_ID}`.
 `from.task` placeholders are resolved during payload expansion for all actions, so you can use them anywhere a string value is accepted (headers, bodies, args, etc.).
 If you need to preserve non-string types or build complex values, capture the result first with a `VARIABLES` task and reference the variable instead.
 
+
+### Native Secret Placeholders
+When a native secret provider is configured (for example, Vault), task payload strings can also reference secrets using:
+
+- `${secret:vault:<path>#<field>}`
+
+These placeholders are resolved during payload expansion before each action executes. If no secret provider is configured, FlowK returns an explicit error instead of silently skipping resolution.
+
+
 ```json
 {
   "id": "get_user",
@@ -114,6 +125,7 @@ If you need to preserve non-string types or build complex values, capture the re
 
 ### Subflows
 Subflows are regular flow JSON files referenced in `imports`. They are expanded before execution, and their tasks run as part of the full task list. Each subflow keeps its own flow ID for logging and for targeting `on_error_flow` / `finally_flow`.
+To explicitly mark a file as subflow-only in discovery UIs, add `"is_subflow": true` at the top level of that file.
 
 ```json
 {

@@ -39,6 +39,7 @@ OS-level operations and container management.
 - **[SHELL](./system.md#shell)**: Run local shell commands.
 - **[BASE64](./system.md#base64)**: Encode/decode text or files using Go's `encoding/base64`.
 - **[DOCKER](./infra.md#docker)**: Manage Docker containers (run, stop, inspect).
+- **[SECRET_PROVIDER_VAULT](./system.md#secret_provider_vault)**: Seed/check Vault KV v2 for native `${secret:vault:...}` placeholders.
 - **[KUBERNETES](./infra.md#kubernetes)**: Apply manifests or check pod status.
 - **[HELM](./infra.md#helm)**: Manage Helm repos, releases, charts, and templates.
 

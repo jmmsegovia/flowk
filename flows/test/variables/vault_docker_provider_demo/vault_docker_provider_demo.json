@@ -1,0 +1,124 @@
+{
+  "id": "vault.docker.provider.demo",
+  "name": "vault.docker.provider.demo",
+  "description": "Starts Vault in Docker and manages secrets with native SECRET_PROVIDER_VAULT operations.",
+  "tasks": [
+    {
+      "id": "start.vault.dev",
+      "name": "start.vault.dev",
+      "description": "Start a local Vault dev container in Docker and expose port 8200.",
+      "action": "DOCKER",
+      "operation": "CONTAINER_RUN",
+      "image": "hashicorp/vault:1.16",
+      "name": "flowk-vault-dev",
+      "detach": true,
+      "remove_existing": true,
+      "ports": ["8200:8200"],
+      "command": [
+        "server",
+        "-dev",
+        "-dev-root-token-id=root",
+        "-dev-listen-address=0.0.0.0:8200"
+      ]
+    },
+    {
+      "id": "wait.vault",
+      "name": "wait.vault",
+      "description": "Wait a few seconds to allow Vault startup to complete.",
+      "action": "SLEEP",
+      "seconds": 3
+    },
+    {
+      "id": "vault.health",
+      "name": "vault.health",
+      "description": "Check Vault health status using native HTTP integration.",
+      "action": "SECRET_PROVIDER_VAULT",
+      "operation": "HEALTH",
+      "address": "http://127.0.0.1:8200",
+      "token": "root"
+    },
+    {
+      "id": "vault.seed",
+      "name": "vault.seed",
+      "description": "Write a demo token into Vault KV v2 at path apps/demo.",
+      "action": "SECRET_PROVIDER_VAULT",
+      "operation": "KV_PUT",
+      "address": "http://127.0.0.1:8200",
+      "token": "root",
+      "kv_mount": "secret",
+      "path": "apps/demo",
+      "data": {
+        "api_token": "demo-token-phase1",
+        "region": "eu-west-1"
+      }
+    },
+    {
+      "id": "vault.get",
+      "name": "vault.get",
+      "description": "Read the same KV secret via KV_GET.",
+      "action": "SECRET_PROVIDER_VAULT",
+      "operation": "KV_GET",
+      "address": "http://127.0.0.1:8200",
+      "token": "root",
+      "kv_mount": "secret",
+      "path": "apps/demo"
+    },
+    {
+      "id": "vault.list",
+      "name": "vault.list",
+      "description": "List keys below the apps prefix with KV_LIST.",
+      "action": "SECRET_PROVIDER_VAULT",
+      "operation": "KV_LIST",
+      "address": "http://127.0.0.1:8200",
+      "token": "root",
+      "kv_mount": "secret",
+      "path": "apps"
+    },
+    {
+      "id": "assert.placeholder",
+      "name": "assert.placeholder",
+      "description": "Resolve the Vault placeholder and assert the expected value with native EVALUATE.",
+      "action": "EVALUATE",
+      "if_conditions": [
+        {
+          "left": "${secret:vault:apps/demo#api_token}",
+          "operation": "=",
+          "right": "demo-token-phase1"
+        }
+      ],
+      "then": {
+        "continue": "Vault placeholder resolved correctly"
+      },
+      "else": {
+        "exit": "Vault placeholder did not resolve to the expected value"
+      }
+    },
+    {
+      "id": "vault.delete",
+      "name": "vault.delete",
+      "description": "Delete apps/demo including metadata and all versions.",
+      "action": "SECRET_PROVIDER_VAULT",
+      "operation": "KV_DELETE",
+      "address": "http://127.0.0.1:8200",
+      "token": "root",
+      "kv_mount": "secret",
+      "path": "apps/demo"
+    },
+    {
+      "id": "stop.vault.dev",
+      "name": "stop.vault.dev",
+      "description": "Stop the Vault dev container.",
+      "action": "DOCKER",
+      "operation": "CONTAINER_STOP",
+      "container": "flowk-vault-dev"
+    },
+    {
+      "id": "remove.vault.dev",
+      "name": "remove.vault.dev",
+      "description": "Remove the Vault dev container after execution.",
+      "action": "DOCKER",
+      "operation": "CONTAINER_REMOVE",
+      "container": "flowk-vault-dev"
+    }
+  ]
+}

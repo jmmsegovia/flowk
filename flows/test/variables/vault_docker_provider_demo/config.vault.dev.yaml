@@ -1,0 +1,6 @@
+secrets:
+  provider: vault
+  vault:
+    address: http://127.0.0.1:8200
+    token: root
+    kv_mount: secret

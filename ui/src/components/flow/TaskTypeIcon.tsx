@@ -252,6 +252,7 @@ const ACTION_VARIANTS: Record<string, BadgeVariant> = {
   HTTP_REQUEST: buildVariant('arrow', '#0ea5e9', '#f0f9ff', 'HTTP Request'),
   SHELL: buildVariant('terminal', '#334155', '#f8fafc', 'Shell'),
   DOCKER: buildVariant('container', '#2496ed', '#e6f3ff', 'Docker'),
+  SECRET_PROVIDER_VAULT: buildVariant('key', '#7c3aed', '#f3e8ff', 'Vault'),
   SSH: buildVariant('key', '#10b981', '#ecfdf5', 'SSH'),
   TELNET: buildVariant('antenna', '#0284c7', '#e0f2fe', 'Telnet'),
   PRINT: buildVariant('printer', '#64748b', '#f1f5f9', 'Print'),

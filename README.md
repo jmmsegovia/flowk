@@ -37,6 +37,7 @@ Whether you are running local dev setups, CI/CD pipelines, or **complex end-to-e
 - **Composable Architecture**: Nest flows within flows (`subflows`) to encourage reuse and modularity.
 - **Parallel Execution**: Native support for parallel tasks to speed up independent operations.
 - **Rich Action Ecosystem**: Built-in support for HTTP requests, Docker, Kubernetes, Database (MySQL, Postgres), SSH, and more.
+- **Native HashiCorp Vault Integration**: Resolve `${secret:vault:...}` placeholders at runtime and manage KV v2 with `SECRET_PROVIDER_VAULT` (`HEALTH`, `KV_PUT`, `KV_GET`, `KV_LIST`, `KV_DELETE`) without external Vault CLI calls.
 - **Interactive UI**: An optional web interface to visualize flow execution, inspect task details, and view real-time logs.
 - **Resilient**: Features like `on_error_flow` and `finally_flow` ensure robust error handling and resource cleanup.
 - **AI-Ready**: Designed for LLM-assisted workflows. Download the full action schema and context to let AI generate flows for you.
@@ -76,6 +77,45 @@ There are 50+ example flows under `flows/`. Some examples require external servi
 _Open your browser at `http://localhost:8080` (default port)_
 
 ![Image](https://github.com/user-attachments/assets/0aa86b4c-5afb-4b60-9e0e-cbcb152087bf)
+
+## HashiCorp Vault Integration (End-to-End)
+
+FlowK includes complete Vault support in two layers:
+
+- **Runtime secret resolution**: enable `secrets.provider: vault` in config and use `${secret:vault:<path>#<field>}` placeholders in any task payload.
+- **Native Vault operations**: use `SECRET_PROVIDER_VAULT` for KV v2 lifecycle operations (`HEALTH`, `KV_PUT`, `KV_GET`, `KV_LIST`, `KV_DELETE`).
+- **Runnable E2E demo**: sample flow starts Vault in Docker, writes/reads/lists/deletes KV secrets, validates placeholder resolution, then cleans up the container.
+
+Minimal config:
+
+```yaml
+secrets:
+  provider: vault
+  vault:
+    address: http://127.0.0.1:8200
+    token: root
+    kv_mount: secret
+```
+
+Example placeholder:
+
+```json
+"Authorization": "Bearer ${secret:vault:apps/demo#api_token}"
+```
+
+Validate and run the full Docker-based integration demo:
+
+```bash
+./flowk run -flow flows/test/variables/vault_docker_provider_demo/vault_docker_provider_demo.json -config flows/test/variables/vault_docker_provider_demo/config.vault.dev.yaml -validate-only
+./flowk run -flow flows/test/variables/vault_docker_provider_demo/vault_docker_provider_demo.json -config flows/test/variables/vault_docker_provider_demo/config.vault.dev.yaml
+```
+
+Detailed docs:
+
+- [Getting Started: Vault config and placeholders](./docs/getting-started.md#native-vault-placeholders)
+- [System actions: SECRET_PROVIDER_VAULT](./docs/actions/system.md#secret_provider_vault)
+- [Vault action full reference](./docs/actions/system/secret_provider_vault/secret_provider_vault.md)
+- [End-to-end Vault Docker demo](./flows/test/variables/vault_docker_provider_demo/vault_docker_provider_demo.md)
 
 ### Build (Optional)
 

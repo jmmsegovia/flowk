@@ -23,9 +23,17 @@ type RawFlowResponse = {
   id: string;
   name?: string;
   description: string;
-  imports?: string[];
-  flowNames?: Record<string, string>;
-  tasks: RawTaskResponse[];
+  isSubflow?: boolean;
+  sourceName?: string;
+  sourceDir?: string;
+  imports?: string[] | null;
+  flowNames?: Record<string, string> | null;
+  tasks?: RawTaskResponse[] | null;
+};
+
+type RawFlowListResponse = {
+  flows?: RawFlowResponse[] | null;
+  rootDir?: string;
 };
 
 type RawTaskResponse = {
@@ -34,6 +42,7 @@ type RawTaskResponse = {
   description?: string;
   action: string;
   flowId?: string;
+  raw?: Record<string, unknown>;
   status?: string;
   success?: boolean;
   startedAt?: string;
@@ -43,6 +52,19 @@ type RawTaskResponse = {
   result?: unknown;
   fields?: Record<string, unknown>;
 };
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isRawTaskResponse = (value: unknown): value is RawTaskResponse =>
+  isRecord(value) &&
+  typeof value.id === 'string' &&
+  typeof value.action === 'string';
+
+const isRawFlowResponse = (value: unknown): value is RawFlowResponse =>
+  isRecord(value) &&
+  typeof value.id === 'string' &&
+  typeof value.description === 'string';
 
 export type FlowLayoutSnapshot = {
   version: number;
@@ -57,6 +79,7 @@ const mapTask = (task: RawTaskResponse): TaskDefinition => {
     description: task.description,
     action: task.action,
     flowId: task.flowId,
+    raw: task.raw,
     status: task.status,
     success: task.success,
     startedAt: task.startedAt,
@@ -84,10 +107,28 @@ const mapFlowResponse = (data: RawFlowResponse): FlowDefinition => ({
   id: data.id,
   name: data.name ?? data.id,
   description: data.description,
-  imports: data.imports ?? [],
+  isSubflow: data.isSubflow,
+  sourceName: data.sourceName,
+  sourceDir: data.sourceDir,
+  imports: Array.isArray(data.imports) ? data.imports : [],
   flowNames: data.flowNames ?? undefined,
-  tasks: data.tasks.map(mapTask),
+  tasks: Array.isArray(data.tasks) ? data.tasks.filter(isRawTaskResponse).map(mapTask) : [],
 });
+
+export type AvailableFlowsResponse = {
+  flows: FlowDefinition[];
+  rootDir?: string;
+};
+
+export const fetchAvailableFlows = async (): Promise<AvailableFlowsResponse> => {
+  const response = await fetch(withBase('/api/flows'));
+  const data = await parseJSON<RawFlowListResponse>(response);
+  const items = Array.isArray(data.flows) ? data.flows.filter(isRawFlowResponse) : [];
+  return {
+    flows: items.map(mapFlowResponse),
+    rootDir: typeof data.rootDir === 'string' ? data.rootDir : undefined
+  };
+};
 
 export const fetchFlowDefinition = async (): Promise<FlowDefinition | null> => {
   const response = await fetch(withBase('/api/flow'));
@@ -107,15 +148,11 @@ export const fetchFlowNotes = async (): Promise<string | null> => {
   return typeof data.markdown === 'string' ? data.markdown : '';
 };
 
-export const uploadFlowDefinition = async (payload: string, filename?: string): Promise<FlowDefinition> => {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (filename?.trim()) {
-    headers['X-Flow-Filename'] = filename.trim();
-  }
-  const response = await fetch(withBase('/api/flow'), {
+export const openFlowDefinition = async (sourceName: string): Promise<FlowDefinition> => {
+  const response = await fetch(withBase('/api/flows/open'), {
     method: 'POST',
-    headers,
-    body: payload,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sourceName }),
   });
   const data = await parseJSON<RawFlowResponse>(response);
   return mapFlowResponse(data);

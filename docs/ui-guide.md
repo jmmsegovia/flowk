@@ -7,10 +7,12 @@ FlowK includes an optional web interface that provides a rich visual experience 
 To start the UI, include the `-serve-ui` flag when running a flow:
 
 ```bash
-./bin/flowk run -serve-ui -flow ./path/to/flow.json
+./bin/flowk run -serve-ui
 ```
 
 By default, the UI is accessible at `http://localhost:8080`.
+The **Available flows** page scans the configured `flows_dir` recursively and groups flows by folder path.
+Imported subflows are hidden from that top-level list, and files marked with `"is_subflow": true` are also excluded.
 
 ## Features
 
@@ -57,3 +59,12 @@ View the current state of all variables in the flow context. This is crucial for
 - **Auto-Focus**: The UI will automatically center on the currently running task if you enable "Follow Execution".
 - **Layout Persistence**: Node positions and viewport are saved under FlowK's config directory (the folder containing `config.yaml`, in `ui/layouts`). If you run with `-config`, layouts are stored next to that config file. Delete those files to reset.
 - **Layout Controls**: Use the header controls to save the layout manually, toggle auto-save, or reset the saved layout for the current flow.
+
+
+## API Contract (OpenAPI)
+
+When FlowK runs with `-serve-ui`, the backend now exposes an OpenAPI document for the UI/server contract at:
+
+- `http://localhost:8080/api/openapi.json`
+
+This file can be used to generate API clients for future integrations (for example, additional web or automation clients beyond the bundled UI).

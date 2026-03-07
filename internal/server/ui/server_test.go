@@ -350,6 +350,44 @@ func TestActionsGuideEndpoint(t *testing.T) {
 	}
 }
 
+func TestOpenAPIEndpoint(t *testing.T) {
+	srv, err := NewServer(Config{
+		Address: "127.0.0.1:0",
+	})
+	if err != nil {
+		t.Fatalf("NewServer error: %v", err)
+	}
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest(http.MethodGet, "/api/openapi.json", nil)
+	if err != nil {
+		t.Fatalf("creating request: %v", err)
+	}
+
+	srv.Handle().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d (%s)", rec.Code, rec.Body.String())
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decoding response: %v", err)
+	}
+
+	if payload["openapi"] != "3.0.3" {
+		t.Fatalf("unexpected openapi version: %v", payload["openapi"])
+	}
+
+	paths, ok := payload["paths"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected paths object in response")
+	}
+
+	if _, ok := paths["/api/run/events"]; !ok {
+		t.Fatalf("expected /api/run/events path in contract")
+	}
+}
+
 func TestStoreFlowDefinitionMissingImport(t *testing.T) {
 	repo := t.TempDir()
 
@@ -493,5 +531,233 @@ func TestStoreFlowDefinitionSearchesParentDirForImports(t *testing.T) {
 	importedPath := filepath.Join(filepath.Dir(path), "subflows", "tic", "child.json")
 	if _, err := os.Stat(importedPath); err != nil {
 		t.Fatalf("expected copied import at %s: %v", importedPath, err)
+	}
+}
+
+func TestHandleFlowsListsRecursiveDirectory(t *testing.T) {
+	repo := t.TempDir()
+	flowsRoot := filepath.Join(repo, "flows")
+
+	rootFlowPath := filepath.Join(flowsRoot, "root.json")
+	nestedFlowPath := filepath.Join(flowsRoot, "nested", "child.json")
+	if err := os.MkdirAll(filepath.Dir(nestedFlowPath), 0o755); err != nil {
+		t.Fatalf("creating nested dir: %v", err)
+	}
+
+	rootFlow := `{
+		"id": "root.flow",
+		"name": "root.flow",
+		"description": "root flow",
+		"tasks": [
+			{ "id": "t1", "name": "t1", "description": "task", "action": "PRINT", "entries": [{"message": "root"}] }
+		]
+	}`
+	nestedFlow := `{
+		"id": "child.flow",
+		"name": "child.flow",
+		"description": "child flow",
+		"tasks": [
+			{ "id": "t1", "name": "t1", "description": "task", "action": "PRINT", "entries": [{"message": "child"}] }
+		]
+	}`
+
+	if err := os.WriteFile(rootFlowPath, []byte(rootFlow), 0o600); err != nil {
+		t.Fatalf("writing root flow: %v", err)
+	}
+	if err := os.WriteFile(nestedFlowPath, []byte(nestedFlow), 0o600); err != nil {
+		t.Fatalf("writing nested flow: %v", err)
+	}
+
+	srv, err := NewServer(Config{
+		Address:     "127.0.0.1:0",
+		FlowRootDir: flowsRoot,
+	})
+	if err != nil {
+		t.Fatalf("NewServer error: %v", err)
+	}
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest(http.MethodGet, "/api/flows", nil)
+	if err != nil {
+		t.Fatalf("creating request: %v", err)
+	}
+	srv.Handle().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d (%s)", rec.Code, rec.Body.String())
+	}
+
+	var payload struct {
+		RootDir string `json:"rootDir"`
+		Flows   []struct {
+			ID         string `json:"id"`
+			SourceName string `json:"sourceName"`
+		} `json:"flows"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decoding response: %v", err)
+	}
+
+	if len(payload.Flows) != 2 {
+		t.Fatalf("expected 2 flows, got %d", len(payload.Flows))
+	}
+	if payload.RootDir != flowsRoot {
+		t.Fatalf("rootDir = %q, want %q", payload.RootDir, flowsRoot)
+	}
+
+	if payload.Flows[0].SourceName != "nested/child.json" || payload.Flows[1].SourceName != "root.json" {
+		t.Fatalf("unexpected flow order/sources: %+v", payload.Flows)
+	}
+}
+
+func TestHandleFlowsSkipsSubflowsInListing(t *testing.T) {
+	repo := t.TempDir()
+	flowsRoot := filepath.Join(repo, "flows")
+
+	mainPath := filepath.Join(flowsRoot, "main.json")
+	importedPath := filepath.Join(flowsRoot, "subflows", "imported.json")
+	markedSubflowPath := filepath.Join(flowsRoot, "marked_subflow.json")
+	if err := os.MkdirAll(filepath.Dir(importedPath), 0o755); err != nil {
+		t.Fatalf("creating subflows dir: %v", err)
+	}
+
+	mainFlow := `{
+		"id": "main.flow",
+		"name": "main.flow",
+		"description": "main flow",
+		"imports": ["./subflows/imported.json"],
+		"tasks": [
+			{ "id": "main.task", "name": "main.task", "description": "task", "action": "PRINT", "entries": [{"message": "main"}] }
+		]
+	}`
+	importedFlow := `{
+		"id": "imported.flow",
+		"name": "imported.flow",
+		"description": "imported flow",
+		"tasks": [
+			{ "id": "imported.task", "name": "imported.task", "description": "task", "action": "PRINT", "entries": [{"message": "sub"}] }
+		]
+	}`
+	markedSubflow := `{
+		"id": "marked.subflow",
+		"name": "marked.subflow",
+		"description": "marked subflow",
+		"is_subflow": true,
+		"tasks": [
+			{ "id": "t1", "name": "t1", "description": "task", "action": "PRINT", "entries": [{"message": "marked"}] }
+		]
+	}`
+
+	if err := os.WriteFile(mainPath, []byte(mainFlow), 0o600); err != nil {
+		t.Fatalf("writing main flow: %v", err)
+	}
+	if err := os.WriteFile(importedPath, []byte(importedFlow), 0o600); err != nil {
+		t.Fatalf("writing imported flow: %v", err)
+	}
+	if err := os.WriteFile(markedSubflowPath, []byte(markedSubflow), 0o600); err != nil {
+		t.Fatalf("writing marked subflow: %v", err)
+	}
+
+	srv, err := NewServer(Config{
+		Address:     "127.0.0.1:0",
+		FlowRootDir: flowsRoot,
+	})
+	if err != nil {
+		t.Fatalf("NewServer error: %v", err)
+	}
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest(http.MethodGet, "/api/flows", nil)
+	if err != nil {
+		t.Fatalf("creating request: %v", err)
+	}
+	srv.Handle().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d (%s)", rec.Code, rec.Body.String())
+	}
+
+	var payload struct {
+		Flows []struct {
+			ID         string `json:"id"`
+			SourceName string `json:"sourceName"`
+		} `json:"flows"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decoding response: %v", err)
+	}
+
+	if len(payload.Flows) != 1 {
+		t.Fatalf("expected only main flow in listing, got %d", len(payload.Flows))
+	}
+	if payload.Flows[0].ID != "main.flow" || payload.Flows[0].SourceName != "main.json" {
+		t.Fatalf("unexpected listed flow: %+v", payload.Flows[0])
+	}
+}
+
+func TestHandleOpenFlowActivatesSelectedSource(t *testing.T) {
+	repo := t.TempDir()
+	flowsRoot := filepath.Join(repo, "flows")
+	flowPath := filepath.Join(flowsRoot, "demo", "demo.json")
+	if err := os.MkdirAll(filepath.Dir(flowPath), 0o755); err != nil {
+		t.Fatalf("creating flow dir: %v", err)
+	}
+
+	flowJSON := `{
+		"id": "demo.flow",
+		"name": "demo.flow",
+		"description": "demo flow",
+		"tasks": [
+			{ "id": "t1", "name": "t1", "description": "task", "action": "PRINT", "entries": [{"message": "demo"}] }
+		]
+	}`
+	if err := os.WriteFile(flowPath, []byte(flowJSON), 0o600); err != nil {
+		t.Fatalf("writing flow: %v", err)
+	}
+
+	srv, err := NewServer(Config{
+		Address:     "127.0.0.1:0",
+		FlowRootDir: flowsRoot,
+	})
+	if err != nil {
+		t.Fatalf("NewServer error: %v", err)
+	}
+
+	openReq := `{"sourceName":"demo/demo.json"}`
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest(http.MethodPost, "/api/flows/open", strings.NewReader(openReq))
+	if err != nil {
+		t.Fatalf("creating open request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	srv.Handle().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d (%s)", rec.Code, rec.Body.String())
+	}
+
+	rec = httptest.NewRecorder()
+	req, err = http.NewRequest(http.MethodGet, "/api/flow", nil)
+	if err != nil {
+		t.Fatalf("creating get flow request: %v", err)
+	}
+	srv.Handle().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d (%s)", rec.Code, rec.Body.String())
+	}
+
+	var payload struct {
+		ID         string `json:"id"`
+		SourceName string `json:"sourceName"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decoding response: %v", err)
+	}
+	if payload.ID != "demo.flow" {
+		t.Fatalf("id = %q, want demo.flow", payload.ID)
+	}
+	if payload.SourceName != "demo/demo.json" {
+		t.Fatalf("sourceName = %q, want demo/demo.json", payload.SourceName)
 	}
 }

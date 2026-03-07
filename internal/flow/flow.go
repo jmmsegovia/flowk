@@ -27,6 +27,9 @@ type Definition struct {
 	ID          string `json:"id"`
 	Name        string `json:"name,omitempty"`
 	Description string `json:"description"`
+	// IsSubflow marks this definition as an auxiliary imported flow that should
+	// not be listed as a top-level runnable flow in discovery UIs.
+	IsSubflow bool `json:"is_subflow,omitempty"`
 	// Imports expands referenced flow definitions before executing the current
 	// flow. Paths are resolved relative to the directory of the main flow
 	// definition.

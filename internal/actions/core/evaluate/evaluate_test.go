@@ -10,6 +10,7 @@ import (
 	"flowk/internal/actions/registry"
 	"flowk/internal/flow"
 	"flowk/internal/logging/colors"
+	"flowk/internal/shared/expansion"
 )
 
 const sampleJSON = `{
@@ -41,6 +42,17 @@ type coloredMessage struct {
 type stubLogger struct {
 	messages        []string
 	coloredMessages []coloredMessage
+}
+
+type evaluateSecretResolverStub struct {
+	values map[string]string
+}
+
+func (s evaluateSecretResolverStub) Resolve(_ context.Context, reference string) (string, error) {
+	if value, ok := s.values[reference]; ok {
+		return value, nil
+	}
+	return "", fmt.Errorf("secret not found: %s", reference)
 }
 
 func (l *stubLogger) Printf(format string, args ...any) {
@@ -461,6 +473,61 @@ func TestExecuteResolvesVariablePlaceholders(t *testing.T) {
 	}}
 
 	ok, _, err := Execute(nil, tasks, variables, conditions, logger)
+	if err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	if !ok {
+		t.Fatalf("Execute() result = false, want true")
+	}
+}
+
+func TestExecuteResolvesSecretPlaceholderOnLeft(t *testing.T) {
+	t.Cleanup(func() { expansion.SetSecretResolver(nil) })
+	expansion.SetSecretResolver(evaluateSecretResolverStub{
+		values: map[string]string{
+			"vault:apps/demo#api_token": "demo-token-phase1",
+		},
+	})
+
+	logger := newStubLogger()
+	conditions := []Condition{{
+		Left:      "${secret:vault:apps/demo#api_token}",
+		Operation: "=",
+		Right:     "demo-token-phase1",
+	}}
+
+	ok, _, err := Execute(nil, nil, nil, conditions, logger)
+	if err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	if !ok {
+		t.Fatalf("Execute() result = false, want true")
+	}
+}
+
+func TestExecuteResolvesSecretPlaceholderOnRight(t *testing.T) {
+	t.Cleanup(func() { expansion.SetSecretResolver(nil) })
+	expansion.SetSecretResolver(evaluateSecretResolverStub{
+		values: map[string]string{
+			"vault:apps/demo#api_token": "demo-token-phase1",
+		},
+	})
+
+	logger := newStubLogger()
+	task := &flow.Task{
+		Status:     flow.TaskStatusCompleted,
+		ResultType: flow.ResultTypeJSON,
+		Result: map[string]any{
+			"token": "demo-token-phase1",
+		},
+	}
+	conditions := []Condition{{
+		Left:      "result$.token",
+		Operation: "=",
+		Right:     "${secret:vault:apps/demo#api_token}",
+	}}
+
+	ok, _, err := Execute(task, nil, nil, conditions, logger)
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}

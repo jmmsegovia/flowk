@@ -1,0 +1,86 @@
+{
+  "id": "vault.docker.list.and.delete",
+  "name": "vault.docker.list.and.delete",
+  "description": "Docker-based example that seeds multiple KV paths, lists them, and deletes one secret.",
+  "tasks": [
+    {
+      "id": "start.vault.dev",
+      "name": "start.vault.dev",
+      "action": "DOCKER",
+      "operation": "CONTAINER_RUN",
+      "image": "hashicorp/vault:1.16",
+      "name": "flowk-vault-dev-list-delete",
+      "detach": true,
+      "remove_existing": true,
+      "ports": ["8200:8200"],
+      "command": [
+        "server",
+        "-dev",
+        "-dev-root-token-id=root",
+        "-dev-listen-address=0.0.0.0:8200"
+      ]
+    },
+    {
+      "id": "wait.vault",
+      "name": "wait.vault",
+      "action": "SLEEP",
+      "seconds": 3
+    },
+    {
+      "id": "seed.one",
+      "name": "seed.one",
+      "action": "SECRET_PROVIDER_VAULT",
+      "operation": "KV_PUT",
+      "address": "http://127.0.0.1:8200",
+      "token": "root",
+      "path": "apps/a",
+      "data": {
+        "value": "A"
+      }
+    },
+    {
+      "id": "seed.two",
+      "name": "seed.two",
+      "action": "SECRET_PROVIDER_VAULT",
+      "operation": "KV_PUT",
+      "address": "http://127.0.0.1:8200",
+      "token": "root",
+      "path": "apps/b",
+      "data": {
+        "value": "B"
+      }
+    },
+    {
+      "id": "list.apps",
+      "name": "list.apps",
+      "action": "SECRET_PROVIDER_VAULT",
+      "operation": "KV_LIST",
+      "address": "http://127.0.0.1:8200",
+      "token": "root",
+      "path": "apps"
+    },
+    {
+      "id": "delete.one",
+      "name": "delete.one",
+      "action": "SECRET_PROVIDER_VAULT",
+      "operation": "KV_DELETE",
+      "address": "http://127.0.0.1:8200",
+      "token": "root",
+      "path": "apps/a"
+    },
+    {
+      "id": "stop.vault.dev",
+      "name": "stop.vault.dev",
+      "action": "DOCKER",
+      "operation": "CONTAINER_STOP",
+      "container": "flowk-vault-dev-list-delete"
+    },
+    {
+      "id": "remove.vault.dev",
+      "name": "remove.vault.dev",
+      "action": "DOCKER",
+      "operation": "CONTAINER_REMOVE",
+      "container": "flowk-vault-dev-list-delete"
+    }
+  ]
+}

@@ -152,3 +152,36 @@ Manages Helm repositories and release lifecycle operations.
   "timeout_seconds": 120
 }
 ```
+
+---
+
+## SECRET_PROVIDER_VAULT
+
+Runs native Vault HTTP operations for KV v2 management (without calling external Vault CLI commands).
+
+### Action: `SECRET_PROVIDER_VAULT`
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `operation` | String | **Required**. `HEALTH`, `KV_PUT`, `KV_GET`, `KV_LIST`, or `KV_DELETE`. |
+| `address` | String | **Required**. Vault base URL. |
+| `token` | String | **Required**. Authentication token sent in `X-Vault-Token`. |
+| `kv_mount` | String | KV v2 mount. Optional, default `secret`. |
+| `path` | String | Required for `KV_PUT`, `KV_GET`, `KV_LIST`, and `KV_DELETE`. |
+| `data` | Object | Required for `KV_PUT`. Data map to write. |
+
+### Example (`KV_GET`)
+```json
+{
+  "id": "vault_read",
+  "name": "vault_read",
+  "action": "SECRET_PROVIDER_VAULT",
+  "operation": "KV_GET",
+  "address": "http://127.0.0.1:8200",
+  "token": "root",
+  "kv_mount": "secret",
+  "path": "apps/demo"
+}
+```
+
+Detailed reference: `docs/actions/system/secret_provider_vault/secret_provider_vault.md`.

@@ -4,6 +4,7 @@ export interface TaskDefinition extends Record<string, unknown> {
   description?: string;
   action: string;
   flowId?: string;
+  raw?: Record<string, unknown>;
   operation?: string;
   status?: string;
   startedAt?: string;
@@ -20,10 +21,12 @@ export interface FlowDefinition {
   id: string;
   name?: string;
   description: string;
+  isSubflow?: boolean;
+  sourceName?: string;
+  sourceDir?: string;
   imports?: string[];
   flowNames?: Record<string, string>;
   tasks: TaskDefinition[];
-  sourceFileName?: string;
 }
 
 export interface FlowImport {

@@ -1,13 +1,16 @@
 package expansion
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 
 	"flowk/internal/actions/core/variables"
 	"flowk/internal/flow"
+	"flowk/internal/secrets"
 )
 
 // Variable describes a runtime value consumed during expansion operations.
@@ -16,7 +19,17 @@ type Variable = variables.Variable
 var (
 	variablePattern    = regexp.MustCompile(`\$\{([^{}]+)\}`)
 	rawVariablePattern = regexp.MustCompile(`^\$\{\s*([A-Za-z0-9_.-]+)\s*\}$`)
+
+	secretResolverMu sync.RWMutex
+	secretResolver   secrets.Resolver
 )
+
+// SetSecretResolver configures the resolver used for ${secret:...} placeholders.
+func SetSecretResolver(resolver secrets.Resolver) {
+	secretResolverMu.Lock()
+	defer secretResolverMu.Unlock()
+	secretResolver = resolver
+}
 
 func ExpandTaskPayload(raw json.RawMessage, vars map[string]Variable, tasks []flow.Task) (json.RawMessage, error) {
 	if len(raw) == 0 {
@@ -226,6 +239,9 @@ func expandStringWithStack(value string, vars map[string]Variable, stack map[str
 
 		if strings.HasPrefix(match, "${") {
 			name := strings.TrimSpace(match[2 : len(match)-1])
+			if strings.HasPrefix(name, "secret:") {
+				return replaceSecret(name, &expandErr)
+			}
 			if strings.HasPrefix(name, "from.task:") {
 				return match
 			}
@@ -239,6 +255,19 @@ func expandStringWithStack(value string, vars map[string]Variable, stack map[str
 		return "", expandErr
 	}
 	return replaced, nil
+}
+
+func replaceSecret(name string, errRef *error) string {
+	secretResolverMu.RLock()
+	resolver := secretResolver
+	secretResolverMu.RUnlock()
+
+	value, err := secrets.ResolvePlaceholder(context.Background(), resolver, name)
+	if err != nil {
+		*errRef = err
+		return ""
+	}
+	return value
 }
 
 func replaceVariable(name string, vars map[string]Variable, errRef *error, stack map[string]struct{}) string {

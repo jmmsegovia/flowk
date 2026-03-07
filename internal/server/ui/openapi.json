@@ -1,0 +1,182 @@
+{
+  "info": {
+    "description": "Contract between the FlowK UI and flowk run -serve-ui backend.",
+    "title": "FlowK UI Server API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.0.3",
+  "paths": {
+    "/api/actions/guide": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Actions guide"
+          }
+        },
+        "summary": "Get actions guide"
+      }
+    },
+    "/api/flow": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Flow definition"
+          },
+          "204": {
+            "description": "No flow loaded"
+          }
+        },
+        "summary": "Get active flow definition"
+      },
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Imported flow"
+          }
+        },
+        "summary": "Upload/import flow definition"
+      }
+    },
+    "/api/flow/notes": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Notes"
+          },
+          "404": {
+            "description": "No notes available"
+          }
+        },
+        "summary": "Get flow notes markdown"
+      }
+    },
+    "/api/flows": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Available flows"
+          }
+        },
+        "summary": "List available flow definitions"
+      }
+    },
+    "/api/flows/open": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Opened flow"
+          }
+        },
+        "summary": "Open flow by source path"
+      }
+    },
+    "/api/openapi.json": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "OpenAPI spec"
+          }
+        },
+        "summary": "Get API contract"
+      }
+    },
+    "/api/run": {
+      "post": {
+        "responses": {
+          "202": {
+            "description": "Run started"
+          },
+          "400": {
+            "description": "Invalid run request"
+          },
+          "409": {
+            "description": "Run conflict"
+          }
+        },
+        "summary": "Start flow run"
+      }
+    },
+    "/api/run/events": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "text/event-stream"
+          }
+        },
+        "summary": "Subscribe to runtime events (SSE)"
+      }
+    },
+    "/api/run/stop": {
+      "post": {
+        "responses": {
+          "202": {
+            "description": "Stop requested"
+          }
+        },
+        "summary": "Stop active run"
+      }
+    },
+    "/api/run/stop-at": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Stop-at updated"
+          }
+        },
+        "summary": "Set/clear stop-at task"
+      }
+    },
+    "/api/schema": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Schema JSON"
+          }
+        },
+        "summary": "Get combined flow schema"
+      }
+    },
+    "/api/ui/close-flow": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Flow closed"
+          }
+        },
+        "summary": "Clear active flow from UI session"
+      }
+    },
+    "/api/ui/layout": {
+      "delete": {
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Delete saved layout"
+      },
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Layout snapshot"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Get saved layout"
+      },
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Saved"
+          }
+        },
+        "summary": "Save layout"
+      }
+    }
+  }
+}

@@ -17,9 +17,10 @@ const (
 )
 
 const (
-	DefaultUIHost = "127.0.0.1"
-	DefaultUIPort = 8080
-	DefaultUIDir  = "ui/dist"
+	DefaultUIHost   = "127.0.0.1"
+	DefaultUIPort   = 8080
+	DefaultUIDir    = "ui/dist"
+	DefaultFlowsDir = "./flows"
 )
 
 // UIConfig controls how the embedded UI server is exposed.
@@ -31,7 +32,23 @@ type UIConfig struct {
 
 // Config captures the user-facing configuration stored in config.yaml.
 type Config struct {
-	UI UIConfig `yaml:"ui"`
+	UI       UIConfig      `yaml:"ui"`
+	FlowsDir string        `yaml:"flows_dir"`
+	Secrets  SecretsConfig `yaml:"secrets"`
+}
+
+// SecretsConfig controls native secret provider integration.
+type SecretsConfig struct {
+	Provider string             `yaml:"provider"`
+	Vault    VaultSecretsConfig `yaml:"vault"`
+}
+
+// VaultSecretsConfig controls HashiCorp Vault settings.
+type VaultSecretsConfig struct {
+	Address  string `yaml:"address"`
+	Token    string `yaml:"token"`
+	KVMount  string `yaml:"kv_mount"`
+	KVPrefix string `yaml:"kv_prefix"`
 }
 
 // LoadResult reports the resolved configuration data and location.
@@ -49,6 +66,8 @@ func DefaultConfig() Config {
 			Port: DefaultUIPort,
 			Dir:  DefaultUIDir,
 		},
+		FlowsDir: DefaultFlowsDir,
+		Secrets:  SecretsConfig{Provider: "none"},
 	}
 }
 
@@ -126,6 +145,17 @@ func applyDefaults(cfg Config) Config {
 		cfg.UI.Dir = DefaultUIDir
 	}
 
+	cfg.FlowsDir = strings.TrimSpace(cfg.FlowsDir)
+	if cfg.FlowsDir == "" {
+		cfg.FlowsDir = DefaultFlowsDir
+	}
+
+	cfg.Secrets.Provider = strings.TrimSpace(cfg.Secrets.Provider)
+	cfg.Secrets.Vault.Address = strings.TrimSpace(cfg.Secrets.Vault.Address)
+	cfg.Secrets.Vault.Token = strings.TrimSpace(cfg.Secrets.Vault.Token)
+	cfg.Secrets.Vault.KVMount = strings.TrimSpace(cfg.Secrets.Vault.KVMount)
+	cfg.Secrets.Vault.KVPrefix = strings.TrimSpace(cfg.Secrets.Vault.KVPrefix)
+
 	return cfg
 }
 
@@ -133,7 +163,22 @@ func validateConfig(cfg Config) error {
 	if cfg.UI.Port <= 0 || cfg.UI.Port > 65535 {
 		return fmt.Errorf("ui.port must be between 1 and 65535")
 	}
-	return nil
+
+	provider := strings.ToLower(strings.TrimSpace(cfg.Secrets.Provider))
+	switch provider {
+	case "", "none":
+		return nil
+	case "vault":
+		if cfg.Secrets.Vault.Address == "" {
+			return fmt.Errorf("secrets.vault.address is required when secrets.provider is vault")
+		}
+		if cfg.Secrets.Vault.Token == "" {
+			return fmt.Errorf("secrets.vault.token is required when secrets.provider is vault")
+		}
+		return nil
+	default:
+		return fmt.Errorf("secrets.provider %q is not supported", cfg.Secrets.Provider)
+	}
 }
 
 func writeDefaultConfig(path string, cfg Config) error {

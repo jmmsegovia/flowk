@@ -48,5 +48,6 @@
         "CREATE KEYSPACE IF NOT EXISTS alpha_dev10_mgr WITH replication = {'class':'SimpleStrategy','replication_factor':1}; CREATE KEYSPACE IF NOT EXISTS alpha_dev10_disp WITH replication = {'class':'SimpleStrategy','replication_factor':1}; CREATE KEYSPACE IF NOT EXISTS alpha_dev10_keymgr WITH replication = {'class':'SimpleStrategy','replication_factor':1}; CREATE KEYSPACE IF NOT EXISTS sales WITH replication = {'class':'SimpleStrategy','replication_factor':1}; CREATE KEYSPACE IF NOT EXISTS customers WITH replication = {'class':'SimpleStrategy','replication_factor':1}; CREATE KEYSPACE IF NOT EXISTS products WITH replication = {'class':'SimpleStrategy','replication_factor':1}; CREATE KEYSPACE IF NOT EXISTS shop WITH replication = {'class':'SimpleStrategy','replication_factor':1}; CREATE KEYSPACE IF NOT EXISTS analytics WITH replication = {'class':'SimpleStrategy','replication_factor':1}; CREATE KEYSPACE IF NOT EXISTS tic_dev02_disp WITH replication = {'class':'SimpleStrategy','replication_factor':1}; CREATE KEYSPACE IF NOT EXISTS tic_dev02_keymgr WITH replication = {'class':'SimpleStrategy','replication_factor':1}; CREATE TABLE IF NOT EXISTS shop.customers (id text PRIMARY KEY, name text);"
       ]
     }
-  ]
+  ],
+  "is_subflow": true
 }

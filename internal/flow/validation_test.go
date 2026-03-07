@@ -204,3 +204,39 @@ func TestValidateDefinitionAgainstSchema_HelmFragmentDoesNotRestrictOtherOperati
 		t.Fatalf("flow validation failed: %v", err)
 	}
 }
+
+func TestValidateDefinitionAgainstSchema_SecretProviderVaultAction(t *testing.T) {
+	setFragments := installSchemaProviderHarness(t)
+
+	vaultFragment, err := os.ReadFile(filepath.Join("..", "actions", "system", "secretprovidervault", "schema.json"))
+	if err != nil {
+		t.Fatalf("reading secret provider vault fragment: %v", err)
+	}
+
+	setFragments(vaultFragment)
+
+	tmpDir := t.TempDir()
+	flowContent := []byte(`{
+      "description": "validate secret provider vault action",
+      "id": "vault-health",
+      "name": "vault-health",
+      "tasks": [
+        {
+          "action": "SECRET_PROVIDER_VAULT",
+          "id": "vault.health",
+          "name": "vault.health",
+          "operation": "HEALTH",
+          "address": "http://127.0.0.1:8200",
+          "token": "root"
+        }
+      ]
+    }`)
+	flowPath := filepath.Join(tmpDir, "flow.json")
+	if err := os.WriteFile(flowPath, flowContent, 0o600); err != nil {
+		t.Fatalf("writing flow: %v", err)
+	}
+
+	if err := validateDefinitionAgainstSchema(flowPath, flowContent); err != nil {
+		t.Fatalf("flow validation failed: %v", err)
+	}
+}

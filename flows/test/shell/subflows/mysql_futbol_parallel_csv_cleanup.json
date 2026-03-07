@@ -56,5 +56,6 @@
       "image": "${mysql_image}",
       "continueOnError": true
     }
-  ]
+  ],
+  "is_subflow": true
 }

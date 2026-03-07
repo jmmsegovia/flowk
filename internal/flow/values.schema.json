@@ -22,6 +22,10 @@
     "description": {
       "type": "string"
     },
+    "is_subflow": {
+      "type": "boolean",
+      "description": "Marks this definition as a subflow so discovery UIs can hide it from top-level flow lists."
+    },
     "imports": {
       "type": "array",
       "items": {
@@ -390,8 +394,8 @@
               "left": {
                 "type": "string",
                 "minLength": 1,
-                "pattern": "^(\\{\\{\\s*from\\.task:[^{}]+\\s*\\}\\}|\\$\\{\\s*from\\.task:[^{}]+\\s*\\}|\\$\\{\\s*[A-Za-z0-9_.-]+\\s*\\}|\\{\\{\\s*[A-Za-z0-9_.-]+\\s*\\}\\}|[^{}]+)$",
-                "description": "Left operand to evaluate. Must reference a task or variable using `${from.task:...}` or `${variable}` placeholders, or be a literal value."
+                "pattern": "^(\\{\\{\\s*from\\.task:[^{}]+\\s*\\}\\}|\\$\\{\\s*from\\.task:[^{}]+\\s*\\}|\\$\\{\\s*secret:[^{}]+\\s*\\}|\\$\\{\\s*[A-Za-z0-9_.-]+\\s*\\}|\\{\\{\\s*[A-Za-z0-9_.-]+\\s*\\}\\}|[^{}]+)$",
+                "description": "Left operand to evaluate. Must reference a task or variable using `${from.task:...}`, `${variable}`, or `${secret:...}` placeholders, or be a literal value."
               },
               "operation": {
                 "type": "string",
@@ -412,11 +416,11 @@
                 ]
               },
               "right": {
-                "description": "Right operand for the comparison. Strings may contain `${from.task:...}` or `${variable}` placeholders; other JSON types are also accepted.",
+                "description": "Right operand for the comparison. Strings may contain `${from.task:...}`, `${variable}`, or `${secret:...}` placeholders; other JSON types are also accepted.",
                 "oneOf": [
                   {
                     "type": "string",
-                    "pattern": "^(\\{\\{\\s*from\\.task:[^{}]+\\s*\\}\\}|\\$\\{\\s*from\\.task:[^{}]+\\s*\\}|\\$\\{\\s*[A-Za-z0-9_.-]+\\s*\\}|\\{\\{\\s*[A-Za-z0-9_.-]+\\s*\\}\\}|[^{}]*)$"
+                    "pattern": "^(\\{\\{\\s*from\\.task:[^{}]+\\s*\\}\\}|\\$\\{\\s*from\\.task:[^{}]+\\s*\\}|\\$\\{\\s*secret:[^{}]+\\s*\\}|\\$\\{\\s*[A-Za-z0-9_.-]+\\s*\\}|\\{\\{\\s*[A-Za-z0-9_.-]+\\s*\\}\\}|[^{}]*)$"
                   },
                   {
                     "type": "number"
@@ -438,8 +442,8 @@
               "field": {
                 "type": "string",
                 "minLength": 1,
-                "pattern": "^(\\{\\{\\s*from\\.task:[^{}]+\\s*\\}\\}|\\$\\{\\s*from\\.task:[^{}]+\\s*\\}|\\$\\{\\s*[A-Za-z0-9_.-]+\\s*\\}|\\{\\{\\s*[A-Za-z0-9_.-]+\\s*\\}\\})$",
-                "description": "Deprecated alias for `left`. Use placeholders when referencing tasks or variables."
+                "pattern": "^(\\{\\{\\s*from\\.task:[^{}]+\\s*\\}\\}|\\$\\{\\s*from\\.task:[^{}]+\\s*\\}|\\$\\{\\s*secret:[^{}]+\\s*\\}|\\$\\{\\s*[A-Za-z0-9_.-]+\\s*\\}|\\{\\{\\s*[A-Za-z0-9_.-]+\\s*\\}\\})$",
+                "description": "Deprecated alias for `left`. Use placeholders when referencing tasks, variables, or secrets."
               },
               "expected": {
                 "description": "Deprecated alias for `right`. Use `right` for new flows."

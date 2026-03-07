@@ -220,7 +220,7 @@ func TestParseRunArgsValidateOnlyConflictsWithServeUI(t *testing.T) {
 
 func TestParseRunArgsServeUIOptions(t *testing.T) {
 	configHome := setTempConfigHome(t)
-	writeConfig(t, configHome, "ui:\n  host: 0.0.0.0\n  port: 9090\n  dir: ui/custom\n")
+	writeConfig(t, configHome, "ui:\n  host: 0.0.0.0\n  port: 9090\n  dir: ui/custom\nflows_dir: ./my-flows\n")
 	args, err := parseRunArgs([]string{"-flow", "flow.json", "-serve-ui"})
 	if err != nil {
 		t.Fatalf("parseRunArgs() error = %v", err)
@@ -234,6 +234,9 @@ func TestParseRunArgsServeUIOptions(t *testing.T) {
 	if args.uiDir != "ui/custom" {
 		t.Fatalf("uiDir = %q, want ui/custom", args.uiDir)
 	}
+	if args.flowsDir != "./my-flows" {
+		t.Fatalf("flowsDir = %q, want ./my-flows", args.flowsDir)
+	}
 }
 
 func TestParseRunArgsConfigOverride(t *testing.T) {
@@ -242,7 +245,7 @@ func TestParseRunArgsConfigOverride(t *testing.T) {
 
 	customDir := t.TempDir()
 	customPath := filepath.Join(customDir, "custom.yaml")
-	if err := os.WriteFile(customPath, []byte("ui:\n  host: 0.0.0.0\n  port: 9091\n  dir: ui/custom\n"), 0o600); err != nil {
+	if err := os.WriteFile(customPath, []byte("ui:\n  host: 0.0.0.0\n  port: 9091\n  dir: ui/custom\nflows_dir: ./custom-flows\n"), 0o600); err != nil {
 		t.Fatalf("writing custom config: %v", err)
 	}
 
@@ -255,6 +258,9 @@ func TestParseRunArgsConfigOverride(t *testing.T) {
 	}
 	if args.uiDir != "ui/custom" {
 		t.Fatalf("uiDir = %q, want ui/custom", args.uiDir)
+	}
+	if args.flowsDir != "./custom-flows" {
+		t.Fatalf("flowsDir = %q, want ./custom-flows", args.flowsDir)
 	}
 }
 

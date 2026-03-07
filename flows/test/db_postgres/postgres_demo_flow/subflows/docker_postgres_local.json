@@ -34,5 +34,6 @@
       "action": "SLEEP",
       "seconds": 5
     }
-  ]
+  ],
+  "is_subflow": true
 }

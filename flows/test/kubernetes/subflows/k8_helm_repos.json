@@ -19,5 +19,6 @@
       "description": "Refresh Helm repositories.",
       "operation": "REPO_UPDATE"
     }
-  ]
+  ],
+  "is_subflow": true
 }

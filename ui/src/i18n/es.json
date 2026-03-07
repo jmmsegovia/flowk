@@ -30,7 +30,7 @@
   },
   "flowBuilder": {
     "noFlowTitle": "No hay flujo seleccionado",
-    "noFlowDescription": "Importa un archivo JSON desde la página de Flujos para comenzar a construir y ejecutar.",
+    "noFlowDescription": "Abre un flujo desde la página de Flujos para comenzar a construir y ejecutar.",
     "tasksTitle": "Tareas",
     "tabs": {
       "inspector": "Inspector",
@@ -45,9 +45,16 @@
   },
   "flowList": {
     "title": "Flujos disponibles",
-    "description": "Selecciona un flujo para editarlo en el constructor visual. Puedes importar archivos JSON existentes o crear nuevas definiciones.",
-    "empty": "Todavía no hay flujos cargados. Usa 'Importar flujo' para comenzar.",
-    "taskCount": "{{count}} tareas"
+    "description": "Selecciona un flujo para editarlo en el constructor visual. Los flujos se descubren de forma recursiva en el directorio configurado.",
+    "empty": "No se encontraron flujos válidos en el directorio configurado: {{path}}.",
+    "loadError": "Error cargando flujos: {{message}}",
+    "taskCount": "{{count}} tareas",
+    "groupCount": "{{count}} ficheros",
+    "groupCount_plural": "{{count}} ficheros",
+    "rootGroup": "(raíz)",
+    "unknownPath": "(ruta desconocida)",
+    "expandGroup": "Expandir carpeta {{path}}",
+    "collapseGroup": "Contraer carpeta {{path}}"
   },
   "actionGuide": {
     "title": "Actions y operaciones",

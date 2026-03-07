@@ -1,0 +1,66 @@
+{
+  "id": "vault.docker.seed.and.read",
+  "name": "vault.docker.seed.and.read",
+  "description": "Minimal Docker-based example that starts Vault and uses KV_PUT + KV_GET.",
+  "tasks": [
+    {
+      "id": "start.vault.dev",
+      "name": "start.vault.dev",
+      "action": "DOCKER",
+      "operation": "CONTAINER_RUN",
+      "image": "hashicorp/vault:1.16",
+      "name": "flowk-vault-dev-seed-read",
+      "detach": true,
+      "remove_existing": true,
+      "ports": ["8200:8200"],
+      "command": [
+        "server",
+        "-dev",
+        "-dev-root-token-id=root",
+        "-dev-listen-address=0.0.0.0:8200"
+      ]
+    },
+    {
+      "id": "wait.vault",
+      "name": "wait.vault",
+      "action": "SLEEP",
+      "seconds": 3
+    },
+    {
+      "id": "seed.secret",
+      "name": "seed.secret",
+      "action": "SECRET_PROVIDER_VAULT",
+      "operation": "KV_PUT",
+      "address": "http://127.0.0.1:8200",
+      "token": "root",
+      "path": "apps/seed-read",
+      "data": {
+        "username": "demo-user",
+        "password": "demo-pass"
+      }
+    },
+    {
+      "id": "read.secret",
+      "name": "read.secret",
+      "action": "SECRET_PROVIDER_VAULT",
+      "operation": "KV_GET",
+      "address": "http://127.0.0.1:8200",
+      "token": "root",
+      "path": "apps/seed-read"
+    },
+    {
+      "id": "stop.vault.dev",
+      "name": "stop.vault.dev",
+      "action": "DOCKER",
+      "operation": "CONTAINER_STOP",
+      "container": "flowk-vault-dev-seed-read"
+    },
+    {
+      "id": "remove.vault.dev",
+      "name": "remove.vault.dev",
+      "action": "DOCKER",
+      "operation": "CONTAINER_REMOVE",
+      "container": "flowk-vault-dev-seed-read"
+    }
+  ]
+}

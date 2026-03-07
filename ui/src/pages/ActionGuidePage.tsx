@@ -53,7 +53,8 @@ const ACTION_CATEGORY_MAP: Record<string, ActionCategory> = {
   GCLOUD_STORAGE: 'storage',
   SHELL: 'system',
   DOCKER: 'system',
-  BASE64: 'system'
+  BASE64: 'system',
+  SECRET_PROVIDER_VAULT: 'system'
 };
 
 const actionCategoryFor = (name: string): ActionCategory => {
